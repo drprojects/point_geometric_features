@@ -2,8 +2,10 @@
 
 # Point Geometric Features
 
+[![Linux](https://svgshare.com/i/Zhy.svg)](https://svgshare.com/i/Zhy.svg)
 [![python](https://img.shields.io/badge/-Python_3.8-blue?logo=python&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![license](https://img.shields.io/badge/License-MIT-green.svg?labelColor=gray)](https://github.com/ashleve/lightning-hydra-template#license)
+
 
 </div>
 
@@ -26,13 +28,15 @@ Python wrapper around C++ helper to compute the following local geometric featur
 
 ## 🧱 Installation
 
+Tested
+
 ```bash
 # clone project
-git clone https://github.com/YourGithubName/your-repo-name
-cd your-repo-name
+https://github.com/drprojects/point_geometric_features.git
+cd point_geometric_features
 
 # Installation in a dedicated conda environment
-.install.sh
+bash install.sh
 ```
 
 ## 🚀 Demo
@@ -42,8 +46,8 @@ python demo.py
 ```
 
 
-## Credits :credit_card:
-This implementation was largely inspired from [Superpoint Graph](https://github.com/loicland/superpoint_graph). The modifications here allow: 
+## 💳 Credits
+This implementation was largely inspired from [Superpoint Graph](https://github.com/loicland/superpoint_graph). The main modifications here allow: 
 - parallel computation on all points' local neighborhoods, with neighborhoods of varying sizes
 - more geometric features
 - some corrections on geometric features computation
