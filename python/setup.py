@@ -55,7 +55,7 @@ if not os.path.exists("bin"):
     os.mkdir("bin")
 
 # remove previously compiled lib
-purge("bin/", "grid_graph")
+purge("bin/", "pgeof")
 
 ###  compilation  ###
 mod = Extension(

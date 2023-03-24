@@ -53,13 +53,8 @@ conda activate ${PROJECT_NAME}
 
 # Dependencies
 conda install pip numpy -y
-conda install -c anaconda boost -y
 conda install -c omnia eigen3 -y
 conda install eigen -y
 conda install -c r libiconv -y
 
-ln -s $CONDA_PREFIX/lib/python$PYTHON/site-packages/numpy/core/include/numpy $CONDA_PREFIX/include/numpy
-cd src
-cmake . -DPYTHON_LIBRARY=$CONDA_PREFIX/lib/libpython$PYTHON.so -DPYTHON_INCLUDE_DIR=$CONDA_PREFIX/include/python$PYTHON -DBOOST_INCLUDEDIR=$CONDA_PREFIX/include -DEIGEN3_INCLUDE_DIR=$CONDA_PREFIX/include/eigen3
-make
-cd ..
+python ./python/setup.pt build_ext

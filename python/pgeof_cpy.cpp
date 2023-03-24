@@ -47,8 +47,28 @@ static PyObject* pgeof_cpy(PyObject* self, PyObject* args)
     }
 
 static const char* pgeof_doc =
-"pgeof doc\n"
-"TODO\n";
+    "Compute the geometric features associated with each point's\n"
+    "neighborhood. The following features are computed:\n"
+    " - linearity\n"
+    " - planarity\n"
+    " - scattering\n"
+    " - verticality\n"
+    " - normal vector\n"
+    " - length\n"
+    " - surface\n"
+    " - volume\n\n"
+    "Parameters\n"
+    "----------\n"
+    "xyz_boost : bpn::ndarray\n"
+    "    Array of size (n_points, 3) holding the XYZ coordinates for N points\n"
+    "nn_boost : bpn::ndarray\n"
+    "    Array of size (n_neighbors) holding the points' neighbor indices flattened for CSR format\n"
+    "nn_ptr_boost : bpn::ndarray\n"
+    "    Array of size (n_points + 1) indicating the start and end indices of each point's neighbors in nn_boost\n"
+    "k_min: int\n"
+    "    Minimum number of neighbors to consider for features computation. If less, the point set will be given 0 features\n"
+    "verbose: bool\n"
+    "    Whether computation progress should be printed out\n";
 
 static PyMethodDef pgeof_methods[] = {
     {"pgeof", pgeof_cpy, METH_VARARGS, pgeof_doc},
