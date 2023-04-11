@@ -54,7 +54,7 @@ conda activate ${PROJECT_NAME}
 # Dependencies
 conda install pip numpy -y
 conda install -c omnia eigen3 -y
-conda install eigen -y
-conda install -c r libiconv -y
+#conda install eigen -y
+#conda install -c r libiconv -y
 
-python ./python/setup.pt build_ext
+python python/setup.py build_ext

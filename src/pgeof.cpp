@@ -31,7 +31,6 @@ void compute_geometric_features(
         // vector with zeros and continue
         if (k_nn < k_min or k_nn <= 0)
         {
-            std::cout << i_point <<" "<< k_nn<< std::endl;
             features[i_point * 11 + 0]  = 0;
             features[i_point * 11 + 1]  = 0;
             features[i_point * 11 + 2]  = 0;

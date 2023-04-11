@@ -1,18 +1,11 @@
-import numpy as np
-import sys, os
-import matplotlib.lines as mlines # compat. with Python 2
-from matplotlib import cm
-import matplotlib.pyplot as plt
-
-sys.path.append(os.path.join(os.path.realpath(os.path.dirname(__file__)),
-                                              "./python/bin"))
-
+import sys
+import os.path as osp
+sys.path.append(osp.join(osp.realpath(osp.dirname(__file__)), "python/bin"))
 from pgeof import pgeof
-
 import numpy as np
 
 # Parameters
-num_points = 100
+num_points = 10000
 k_min = 1
 verbose = True
 
@@ -25,6 +18,7 @@ verbose = True
 # nn_ptr: [N+1] array
 #     Pointers wrt `nn`. More specifically, the neighbors of point `i` are
 #     `nn[nn_ptr[i]:nn_ptr[i + 1]]`
+
 xyz = np.random.rand(num_points, 3)
 nn_ptr = np.r_[0, np.random.randint(low=0, high=10, size=num_points).cumsum()]
 nn = np.random.randint(low=0, high=num_points, size=nn_ptr[-1])
@@ -53,6 +47,6 @@ nn = np.ascontiguousarray(nn)
 #  10 - curvature
 geof = pgeof(xyz, nn, nn_ptr, k_min, verbose)
 
-# WARNING: we can trust the direction of the eigenvectors but their senses might
-# fluctuate. So you may want to define a standard sense for your normals (eg
-# normals all expressed with positive z-coordinates)
+# WARNING: we can trust the orientation of the eigenvectors but their
+# senses might fluctuate. So you may want to define a standard sense for
+# your normals (eg normals all expressed with positive z-coordinates)
