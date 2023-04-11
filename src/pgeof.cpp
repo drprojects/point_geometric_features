@@ -1,105 +1,21 @@
 #include <iostream>
 #include <cstdio>
 #include <vector>
-#include <Eigen/Dense>
-#include <Eigen/Eigenvalues>
-#include <boost/python.hpp>
-#include <boost/python/numpy.hpp>
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Eigenvalues>
 #include <numpy/ndarrayobject.h>
-#include "boost/tuple/tuple.hpp"
-#include "boost/python/object.hpp"
-#include <boost/tuple/tuple_comparison.hpp>
 #include <limits>
 #include <map>
 
-namespace bp = boost::python;
 namespace ei = Eigen;
-namespace bpn = boost::python::numpy;
 
 typedef ei::Matrix<float, 3, 3> Matrix3f;
 typedef ei::Matrix<float, 3, 1> Vector3f;
 
 
-struct VecToArray
-{//converts a vector<uint8_t> to a numpy array
-    static PyObject * convert(const std::vector<uint8_t> & vec) {
-    npy_intp dims = vec.size();
-    PyObject * obj = PyArray_SimpleNew(1, &dims, NPY_UINT8);
-    void * arr_data = PyArray_DATA((PyArrayObject*)obj);
-    memcpy(arr_data, &vec[0], dims * sizeof(uint8_t));
-    return obj;
-    }
-};
-
-
-template <class T>
-struct VecvecToArray
-{//converts a vector< vector<uint32_t> > to a numpy 2d array
-    static PyObject * convert(const std::vector< std::vector<T> > & vecvec)
-    {
-        npy_intp dims[2];
-        dims[0] = vecvec.size();
-        dims[1] = vecvec[0].size();
-        PyObject * obj;
-        if (typeid(T) == typeid(uint8_t))
-            obj = PyArray_SimpleNew(2, dims, NPY_UINT8);
-        else if (typeid(T) == typeid(float))
-            obj = PyArray_SimpleNew(2, dims, NPY_FLOAT32);
-        else if (typeid(T) == typeid(uint32_t))
-            obj = PyArray_SimpleNew(2, dims, NPY_UINT32);
-        void * arr_data = PyArray_DATA((PyArrayObject*)obj);
-        std::size_t cell_size = sizeof(T);
-        for (std::size_t i = 0; i < dims[0]; i++)
-        {
-            memcpy(arr_data + i * dims[1] * cell_size, &(vecvec[i][0]), dims[1] * cell_size);
-        }
-        return obj;
-    }
-};
-
-
-PyObject * compute_geometric_features(
-    const bpn::ndarray & xyz_boost, const bpn::ndarray & nn_boost,
-    const bpn::ndarray & nn_ptr_boost, int k_min, bool verbose)
+void compute_geometric_features(
+    float *xyz, uint32_t *nn, const uint32_t *nn_ptr, int k_min, int n_points, float *features, bool verbose)
 {
-    /*
-    Compute the geometric features associated with each point's
-    neighborhood. The following features are computed:
-     - linearity
-     - planarity
-     - scattering
-     - verticality
-     - normal vector
-     - length
-     - surface
-     - volume
-
-    Parameters
-    ----------
-    xyz_boost : bpn::ndarray
-        Array of size (n_points, 3) holding the XYZ coordinates for N
-        points
-    nn_boost : bpn::ndarray
-        Array of size (n_neighbors) holding the points' neighbor indices
-        flattened for CSR format
-    nn_ptr_boost : bpn::ndarray
-        Array of size (n_points + 1) indicating the start and end
-        indices of each point's neighbors in nn_boost
-    k_min: int
-        Minimum number of neighbors to consider for features
-        computation. If less, the point set will be given 0 features
-    verbose: bool
-        Whether computation progress should be printed out
-    */
-
-    // Initialize the features
-    std::size_t n_points = bp::len(nn_ptr_boost) - 1;
-    std::vector<std::vector<float>> features(n_points, std::vector<float>(11, 0));
-
-    // Read numpy array data
-    const float * xyz = reinterpret_cast<float*>(xyz_boost.get_data());
-    const uint32_t * nn = reinterpret_cast<uint32_t*>(nn_boost.get_data());
-    const uint32_t * nn_ptr = reinterpret_cast<uint32_t*>(nn_ptr_boost.get_data());
 
     // Each point can be treated in parallel
     std::size_t s_point = 0;
@@ -115,17 +31,18 @@ PyObject * compute_geometric_features(
         // vector with zeros and continue
         if (k_nn < k_min or k_nn <= 0)
         {
-            features[i_point][0]  = 0;
-            features[i_point][1]  = 0;
-            features[i_point][2]  = 0;
-            features[i_point][3]  = 0;
-            features[i_point][4]  = 0;
-            features[i_point][5]  = 0;
-            features[i_point][6]  = 0;
-            features[i_point][7]  = 0;
-            features[i_point][8]  = 0;
-            features[i_point][9]  = 0;
-            features[i_point][10] = 0;
+            std::cout << i_point <<" "<< k_nn<< std::endl;
+            features[i_point * 11 + 0]  = 0;
+            features[i_point * 11 + 1]  = 0;
+            features[i_point * 11 + 2]  = 0;
+            features[i_point * 11 + 3]  = 0;
+            features[i_point * 11 + 4]  = 0;
+            features[i_point * 11 + 5]  = 0;
+            features[i_point * 11 + 6]  = 0;
+            features[i_point * 11 + 7]  = 0;
+            features[i_point * 11 + 8]  = 0;
+            features[i_point * 11 + 9]  = 0;
+            features[i_point * 11 + 10] = 0;
             continue;
         }
 
@@ -237,17 +154,17 @@ PyObject * compute_geometric_features(
         }
 
         // Populate the final feature vector
-        features[i_point][0]  = linearity;
-        features[i_point][1]  = planarity;
-        features[i_point][2]  = scattering;
-        features[i_point][3]  = verticality;
-        features[i_point][4]  = v2[0];
-        features[i_point][5]  = v2[1];
-        features[i_point][6]  = v2[2];
-        features[i_point][7]  = length;
-        features[i_point][8]  = surface;
-        features[i_point][9]  = volume;
-        features[i_point][10] = curvature;
+        features[i_point * 11 + 0]  = linearity;
+        features[i_point * 11 + 1]  = planarity;
+        features[i_point * 11 + 2]  = scattering;
+        features[i_point * 11 + 3]  = verticality;
+        features[i_point * 11 + 4]  = v2[0];
+        features[i_point * 11 + 5]  = v2[1];
+        features[i_point * 11 + 6]  = v2[2];
+        features[i_point * 11 + 7]  = length;
+        features[i_point * 11 + 8]  = surface;
+        features[i_point * 11 + 9]  = volume;
+        features[i_point * 11 + 10] = curvature;
 
         // Print progress
         // NB: when in parallel s_point behavior is undefined, but gives
@@ -266,16 +183,5 @@ PyObject * compute_geometric_features(
         std::cout << std::endl;
     }
 
-    return VecvecToArray<float>::convert(features);
-}
-
-
-using namespace boost::python;
-BOOST_PYTHON_MODULE(libpgeof)
-{
-    _import_array();
-    bp::to_python_converter<std::vector<std::vector<float>, std::allocator<std::vector<float> > >, VecvecToArray<float> >();
-    Py_Initialize();
-    bpn::initialize();
-    def("compute_geometric_features", compute_geometric_features);
+    return;
 }
