@@ -16,7 +16,7 @@ static PyObject* pgeof(PyArrayObject *py_xyz, PyArrayObject * py_nn, PyArrayObje
     float * xyz = (float*) PyArray_DATA(py_xyz);
     uint32_t * nn =  (uint32_t*) PyArray_DATA(py_nn);
     uint32_t * nn_ptr= (uint32_t*) PyArray_DATA(py_nn_ptr);
-    int n_points = PyArray_DIMS(py_xyz)[0];
+    int n_points = PyArray_DIMS(py_nn_ptr)[0] - 1;
 
     //prepare output
     npy_intp size_of_feature[] = {n_points, 11};
