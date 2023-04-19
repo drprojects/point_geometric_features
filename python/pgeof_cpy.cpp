@@ -8,9 +8,10 @@
 #include "../src/pgeof.cpp"
 
 
-/* template for handling several index types in edge_list_to_forward_star */
-static PyObject* pgeof(PyArrayObject *py_xyz, PyArrayObject * py_nn, PyArrayObject * py_nn_ptr,
-    int k_min, int verbose)
+/* template for handling several index types in compute_geometric_features */
+static PyObject* pgeof(
+    PyArrayObject *py_xyz, PyArrayObject * py_nn, PyArrayObject * py_nn_ptr,
+    int k_min, int k_step, int k_min_search, int verbose)
 {
     //convert from python to arrays
     float * xyz = (float*) PyArray_DATA(py_xyz);
@@ -20,29 +21,31 @@ static PyObject* pgeof(PyArrayObject *py_xyz, PyArrayObject * py_nn, PyArrayObje
 
     //prepare output
     npy_intp size_of_feature[] = {n_points, 11};
-    PyArrayObject* py_features = (PyArrayObject*) PyArray_Zeros(2,
-        size_of_feature, PyArray_DescrFromType(NPY_FLOAT32), 0);
+    PyArrayObject* py_features = (PyArrayObject*) PyArray_Zeros(
+        2, size_of_feature, PyArray_DescrFromType(NPY_FLOAT32), 0);
     float *features = (float*) PyArray_DATA(py_features);
 
-    compute_geometric_features(xyz, nn, nn_ptr, k_min, n_points, features, verbose);
+    compute_geometric_features(
+        xyz, nn, nn_ptr, n_points, features, k_min, k_step, k_min_search, verbose);
 
     return Py_BuildValue("O", py_features);
 }
+
 
 /* actual interface*/
 static PyObject* pgeof_cpy(PyObject* self, PyObject* args)
 {   (void) self; // suppress unused parameter warning
 
     /* inputs  */
-    int k_min, verbose;
+    int k_min, k_step, k_min_search, verbose;
     PyArrayObject *py_xyz, *py_nn, *py_nn_ptr;
 
     /* parse the input, from Python Object to C PyArray */
-    if(!PyArg_ParseTuple(args, "OOOii", &py_xyz, &py_nn, &py_nn_ptr, &k_min, &verbose)){
+    if(!PyArg_ParseTuple(args, "OOOiiii", &py_xyz, &py_nn, &py_nn_ptr, &k_min, &k_step, &k_min_search, &verbose)){
         return NULL;
     }
 
-    PyObject* PyReturn = pgeof(py_xyz, py_nn, py_nn_ptr, k_min, verbose);
+    PyObject* PyReturn = pgeof(py_xyz, py_nn, py_nn_ptr, k_min, k_step, k_min_search, verbose);
         return PyReturn;
     }
 
@@ -67,6 +70,12 @@ static const char* pgeof_doc =
     "    Array of size (n_points + 1) indicating the start and end indices of each point's neighbors in nn\n"
     "k_min: int\n"
     "    Minimum number of neighbors to consider for features computation. If less, the point set will be given 0 features\n"
+    "k_step: int\n"
+    "    Step size to take when searching for the optimal neighborhood size, following:\n"
+    "    http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf\n"
+    "    If k_step < 1, the optimal neighborhood will be computed based on all the neighbors available for each point\n"
+    "k_min_search: int\n"
+    "    Minimum neighborhood size used when searching the optimal neighborhood size. It is advised to use a value of 10 or higher\n"
     "verbose: bool\n"
     "    Whether computation progress should be printed out\n";
 

@@ -55,4 +55,4 @@ conda activate ${PROJECT_NAME}
 conda install pip numpy -y
 conda install -c omnia eigen3 -y
 
-python python/setup.py build_ext
+python python/setup.py build_ext --include-dirs=$CONDA_PREFIX/include
