@@ -159,3 +159,5 @@ src/Makefile
 src/CMakeCache.txt
 src/CMakeFiles
 *__pycache__*
+*.npy
+notebooks

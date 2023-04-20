@@ -113,7 +113,8 @@ PCAOutput neighborhood_pca(
     float e0 = val[0] / val_sum;
     float e1 = val[1] / val_sum;
     float e2 = val[2] / val_sum;
-    float eigenentropy = - e0 * log(e0 + epsilon) - e1 * log(e1 + epsilon) - e2 * log(e2 + epsilon);
+    float eigenentropy = - e0 * log(e0 + epsilon) - e1 * log(e1 + epsilon)
+        - e2 * log(e2 + epsilon);
 
     PCAOutput out = {val, v0, v1, v2, eigenentropy};
 
@@ -128,7 +129,7 @@ void compute_geometric_features(
 
     // Each point can be treated in parallel
     std::size_t s_point = 0;
-//    #pragma omp parallel for schedule(static)
+    #pragma omp parallel for schedule(static)
     for (std::size_t i_point = 0; i_point < n_points; i_point++)
     {
         // Recover the points' total number of neighbors
@@ -150,11 +151,6 @@ void compute_geometric_features(
             features[i_point * 11 + 9]  = 0;
             features[i_point * 11 + 10] = 0;
             continue;
-        }
-
-        if (verbose)
-        {
-            std::cout << "i_point=" << i_point << " k_nn=" << k_nn << " k_min=" << k_min << " k_step=" << k_step << std::endl;
         }
 
         // Compute the PCA for neighborhoods of increasing sizes. The
@@ -181,15 +177,11 @@ void compute_geometric_features(
                 // and at the boundary values: k0 and k_nn
                 if ((k > k0) && (k % k_step != 0) && (k != k_nn))
                 {
-                    std::cout << "skipping k=" << k << std::endl;
                     continue;
                 }
 
                 // Actual PCA computation on the k-neighborhood
                 PCAOutput pca_k = neighborhood_pca(xyz, nn, nn_ptr, i_point, k);
-
-                std::cout << "pca_k.eigenentropy=" << pca_k.eigenentropy << std::endl;
-                std::cout << "pca.eigenentropy=" << pca.eigenentropy << std::endl;
 
                 // Keep track of the optimal neighborhood size with the
                 // lowest eigenentropy

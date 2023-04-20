@@ -11,12 +11,12 @@
 /* template for handling several index types in compute_geometric_features */
 static PyObject* pgeof(
     PyArrayObject *py_xyz, PyArrayObject * py_nn, PyArrayObject * py_nn_ptr,
-    int k_min, int k_step, int k_min_search, int verbose)
+    int k_min, int k_step, int k_min_search, bool verbose)
 {
     //convert from python to arrays
-    float * xyz = (float*) PyArray_DATA(py_xyz);
-    uint32_t * nn =  (uint32_t*) PyArray_DATA(py_nn);
-    uint32_t * nn_ptr= (uint32_t*) PyArray_DATA(py_nn_ptr);
+    float * c_xyz = (float*) PyArray_DATA(py_xyz);
+    uint32_t * c_nn =  (uint32_t*) PyArray_DATA(py_nn);
+    uint32_t * c_nn_ptr= (uint32_t*) PyArray_DATA(py_nn_ptr);
     int n_points = PyArray_DIMS(py_nn_ptr)[0] - 1;
 
     //prepare output
@@ -26,27 +26,58 @@ static PyObject* pgeof(
     float *features = (float*) PyArray_DATA(py_features);
 
     compute_geometric_features(
-        xyz, nn, nn_ptr, n_points, features, k_min, k_step, k_min_search, verbose);
+        c_xyz, c_nn, c_nn_ptr, n_points, features, k_min, k_step, k_min_search, verbose);
 
     return Py_BuildValue("O", py_features);
 }
 
 
 /* actual interface*/
-static PyObject* pgeof_cpy(PyObject* self, PyObject* args)
+static PyObject* pgeof_cpy(PyObject* self, PyObject *args, PyObject *kwargs)
 {   (void) self; // suppress unused parameter warning
 
     /* inputs  */
-    int k_min, k_step, k_min_search, verbose;
-    PyArrayObject *py_xyz, *py_nn, *py_nn_ptr;
+    PyArrayObject *xyz;
+    PyArrayObject *nn;
+    PyArrayObject *nn_ptr;
+    int k_min = 1;
+    int k_step = -1;
+    int k_min_search = 10;
+    bool verbose = false;
+
+    // Build variable names used for input args + kwargs parsing
+    static char *keywords[] = {
+        "xyz",
+        "nn",
+        "nn_ptr",
+        "k_min",
+        "k_step",
+        "k_min_search",
+        "verbose",
+        NULL};
 
     /* parse the input, from Python Object to C PyArray */
-    if(!PyArg_ParseTuple(args, "OOOiiii", &py_xyz, &py_nn, &py_nn_ptr, &k_min, &k_step, &k_min_search, &verbose)){
+//    if(!PyArg_ParseTuple(args, "OOOiiii", &xyz, &nn, &nn_ptr, &k_min, &k_step, &k_min_search, &verbose)){
+//        return NULL;
+//    }
+    if (!PyArg_ParseTupleAndKeywords(
+        args,
+        kwargs,
+        "OOO|iiip",
+        keywords,
+        &xyz,
+        &nn,
+        &nn_ptr,
+        &k_min,
+        &k_step,
+        &k_min_search,
+        &verbose))
+    {
         return NULL;
     }
 
-    PyObject* PyReturn = pgeof(py_xyz, py_nn, py_nn_ptr, k_min, k_step, k_min_search, verbose);
-        return PyReturn;
+    PyObject* PyReturn = pgeof(xyz, nn, nn_ptr, k_min, k_step, k_min_search, verbose);
+    return PyReturn;
     }
 
 static const char* pgeof_doc =
@@ -80,7 +111,7 @@ static const char* pgeof_doc =
     "    Whether computation progress should be printed out\n";
 
 static PyMethodDef pgeof_methods[] = {
-    {"pgeof", pgeof_cpy, METH_VARARGS, pgeof_doc},
+    {"pgeof", (PyCFunction) pgeof_cpy, METH_VARARGS | METH_KEYWORDS, pgeof_doc},
     {NULL, NULL, 0, NULL}
 };
 
