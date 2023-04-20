@@ -24,6 +24,7 @@ Python wrapper around C++ helper to compute the following local geometric featur
 - surface
 - volume
 - curvature
+- optimal neighborhood size
 
 
 ## 🧱 Installation
@@ -39,7 +40,27 @@ cd point_geometric_features
 bash install.sh
 ```
 
-## 🚀 Demo
+## 🚀 Using `pgeof`
+
+The `pgeof` function of the `pgeof` module should be used as follows:
+
+```python
+import sys
+import os.path as osp
+sys.path.append(osp.join(osp.realpath(osp.dirname(__file__)), "python/bin"))
+from pgeof import pgeof
+
+pgeof(
+    xyz,              # ndarray - Array of size (n_points, 3) holding the XYZ coordinates for N points
+    nn,               # ndarray - Array of size (n_neighbors) holding the points' neighbor indices flattened for CSR format
+    nn_ptr,           # ndarray - Array of size (n_points + 1) indicating the start and end indices of each point's neighbors in nn
+    k_min=1,          # int - Minimum number of neighbors to consider for features computation. If less, the point set will be given 0 features
+    k_step=-1,        # int - Step size to take when searching for the optimal neighborhood size, following: http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf. If k_step < 1, the optimal neighborhood will be computed based on all the neighbors available for each point 
+    k_min_search=10,  # int - Minimum neighborhood size used when searching the optimal neighborhood size. It is advised to use a value of 10 or higher
+    verbose=False)    # bool - Whether computation progress should be printed out
+```
+
+You may check out the provided demonstration script to get started 👇
 
 ```bash
 python demo.py

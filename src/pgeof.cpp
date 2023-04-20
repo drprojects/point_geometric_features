@@ -139,17 +139,18 @@ void compute_geometric_features(
         // vector with zeros and continue
         if (k_nn < k_min or k_nn <= 0)
         {
-            features[i_point * 11 + 0]  = 0;
-            features[i_point * 11 + 1]  = 0;
-            features[i_point * 11 + 2]  = 0;
-            features[i_point * 11 + 3]  = 0;
-            features[i_point * 11 + 4]  = 0;
-            features[i_point * 11 + 5]  = 0;
-            features[i_point * 11 + 6]  = 0;
-            features[i_point * 11 + 7]  = 0;
-            features[i_point * 11 + 8]  = 0;
-            features[i_point * 11 + 9]  = 0;
-            features[i_point * 11 + 10] = 0;
+            features[i_point * 12 + 0]  = 0;
+            features[i_point * 12 + 1]  = 0;
+            features[i_point * 12 + 2]  = 0;
+            features[i_point * 12 + 3]  = 0;
+            features[i_point * 12 + 4]  = 0;
+            features[i_point * 12 + 5]  = 0;
+            features[i_point * 12 + 6]  = 0;
+            features[i_point * 12 + 7]  = 0;
+            features[i_point * 12 + 8]  = 0;
+            features[i_point * 12 + 9]  = 0;
+            features[i_point * 12 + 10] = 0;
+            features[i_point * 12 + 11] = 0;
             continue;
         }
 
@@ -232,17 +233,18 @@ void compute_geometric_features(
         }
 
         // Populate the final feature vector
-        features[i_point * 11 + 0]  = linearity;
-        features[i_point * 11 + 1]  = planarity;
-        features[i_point * 11 + 2]  = scattering;
-        features[i_point * 11 + 3]  = verticality;
-        features[i_point * 11 + 4]  = v2[0];
-        features[i_point * 11 + 5]  = v2[1];
-        features[i_point * 11 + 6]  = v2[2];
-        features[i_point * 11 + 7]  = length;
-        features[i_point * 11 + 8]  = surface;
-        features[i_point * 11 + 9]  = volume;
-        features[i_point * 11 + 10] = curvature;
+        features[i_point * 12 + 0]  = linearity;
+        features[i_point * 12 + 1]  = planarity;
+        features[i_point * 12 + 2]  = scattering;
+        features[i_point * 12 + 3]  = verticality;
+        features[i_point * 12 + 4]  = v2[0];
+        features[i_point * 12 + 5]  = v2[1];
+        features[i_point * 12 + 6]  = v2[2];
+        features[i_point * 12 + 7]  = length;
+        features[i_point * 12 + 8]  = surface;
+        features[i_point * 12 + 9]  = volume;
+        features[i_point * 12 + 10] = curvature;
+        features[i_point * 12 + 11] = float(k_optimal);
 
         // Print progress
         // NB: when in parallel s_point behavior is undefined, but gives

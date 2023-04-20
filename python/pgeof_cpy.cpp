@@ -18,9 +18,10 @@ static PyObject* pgeof(
     uint32_t * c_nn =  (uint32_t*) PyArray_DATA(py_nn);
     uint32_t * c_nn_ptr= (uint32_t*) PyArray_DATA(py_nn_ptr);
     int n_points = PyArray_DIMS(py_nn_ptr)[0] - 1;
+    int num_features = 12;
 
     //prepare output
-    npy_intp size_of_feature[] = {n_points, 11};
+    npy_intp size_of_feature[] = {n_points, num_features};
     PyArrayObject* py_features = (PyArrayObject*) PyArray_Zeros(
         2, size_of_feature, PyArray_DescrFromType(NPY_FLOAT32), 0);
     float *features = (float*) PyArray_DATA(py_features);
@@ -87,10 +88,12 @@ static const char* pgeof_doc =
     " - planarity\n"
     " - scattering\n"
     " - verticality\n"
-    " - normal vector\n"
+    " - normal vector (oriented towards positive z-coordinates)\n"
     " - length\n"
     " - surface\n"
-    " - volume\n\n"
+    " - volume\n"
+    " - curvature\n"
+    " - optimal neighborhood size\n\n"
     "Parameters\n"
     "----------\n"
     "xyz : ndarray\n"
