@@ -52,25 +52,25 @@ environment.
 
 ## 🚀 Using Point Geometric Features
 
-The `pgeof` function of the `pgeof` module should be used as follows:
+The `pgeof` function should be used as follows:
 
 ```python
-import sys
-import os.path as osp
-sys.path.append(osp.join(osp.realpath(osp.dirname(__file__)), "python/bin"))
-from pgeof import pgeof
+from src import pgeof
 
 pgeof(
-    xyz,              # ndarray - Array of size (n_points, 3) holding the XYZ coordinates for N points
-    nn,               # ndarray - Array of size (n_neighbors) holding the points' neighbor indices flattened for CSR format
-    nn_ptr,           # ndarray - Array of size (n_points + 1) indicating the start and end indices of each point's neighbors in nn
-    k_min=1,          # int - Minimum number of neighbors to consider for features computation. If less, the point set will be given 0 features
-    k_step=-1,        # int - Step size to take when searching for the optimal neighborhood size, following: http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf. If k_step < 1, the optimal neighborhood will be computed based on all the neighbors available for each point 
-    k_min_search=10,  # int - Minimum neighborhood size used when searching the optimal neighborhood size. It is advised to use a value of 10 or higher
-    verbose=False)    # bool - Whether computation progress should be printed out
+    xyz,              # [n_points, 3] float32 2D array - 3D point coordinates
+    nn,               # [num_neighborhoods] uint32 1D array - Flattened neighbor indices. Make sure those are all positive, '-1' indices will either crash or silently compute incorrect features
+    nn_ptr,           # [n_points+1] uint32 1D array - Pointers wrt `nn`. More specifically, the neighbors of point `i` are `nn[nn_ptr[i]:nn_ptr[i + 1]]`
+    k_min=1,          # (optional, default=1) int - Minimum number of neighbors to consider for features computation. If a point has less, it will be given 0 features
+    k_step=-1,        # (optional, default=-1) int - Step size to take when searching for the optimal neighborhood size for each point, following: http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf. If k_step < 1, pgeof will not search for the optimal neighborhood and features will be computed based on the all available neighbors for each point 
+    k_min_search=10,  # (optional, default=10) int - Minimum neighborhood size at which to start when searching for the optimal neighborhood size for each point. It is advised to use a value of 10 or higher, for geometric features robustness
+    verbose=False)    # (optional, default=False) bool - Whether computation progress should be printed out
+
+# Print details on how pgeof works and expected input parameters
+print(help(pgeof))
 ```
 
-You may check out the provided demonstration script to get started 👇
+👇 You may check out the provided `demo.py` script to get started.
 
 ```bash
 python demo.py
@@ -78,7 +78,38 @@ python demo.py
 
 ⚠️ Please note the **neighbors are expected in CSR format**. This allows 
 expressing neighborhoods of varying sizes with dense arrays (eg the output of a 
-radius search).
+radius search). Here are examples of how to easily convert typical k-NN or 
+radius-NN neighborhoods to CSR format.
+
+```python
+from sklearn.neighbors import NearestNeighbors
+import numpy as np
+
+# Generate a random synthetic point cloud and k-nearest neighbors
+num_points = 10000
+k = 20
+xyz = np.random.rand(num_points, 3)
+kneigh = NearestNeighbors(n_neighbors=k).fit(xyz).kneighbors(xyz)
+
+# Converting k-nearest neighbors to CSR format
+nn_ptr = np.arange(num_points + 1) * k
+nn = kneigh[1].flatten()
+```
+
+```python
+from sklearn.neighbors import NearestNeighbors
+import numpy as np
+
+# Generate a random synthetic point cloud and radius neighbors
+num_points = 10000
+radius = 0.1
+xyz = np.random.rand(num_points, 3)
+rneigh = NearestNeighbors(radius=radius).fit(xyz).radius_neighbors(xyz)
+
+# Converting radius neighbors to CSR format
+nn_ptr = np.r_[0, np.array([x.shape[0] for x in rneigh[1]]).cumsum()]
+nn = np.concatenate(rneigh[1])
+```
 
 
 ## 💳 Credits

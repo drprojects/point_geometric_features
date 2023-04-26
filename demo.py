@@ -1,29 +1,30 @@
 import sys
 import os.path as osp
-sys.path.append(osp.join(osp.realpath(osp.dirname(__file__)), "python/bin"))
-from pgeof import pgeof
+sys.path.append(osp.join(osp.realpath(osp.dirname(__file__))))
+from src import pgeof
 import numpy as np
 
-# Parameters
+# Generate a random synthetic point cloud
 num_points = 10000
-k_min = 10
-k_step = 1
-k_min_search = 15
-verbose = True
-
-# Generate synthetic data
-# xyz: [N, 3] 2D array
-#     3D point coordinates
-# nn: [num_neighborhoods] 1D array
-#     Flattened neighbor indices. Make sure those are all positive, '-1'
-#     indices will either crash or silently compute incorrect features
-# nn_ptr: [N+1] 1D array
-#     Pointers wrt `nn`. More specifically, the neighbors of point `i`
-#     are `nn[nn_ptr[i]:nn_ptr[i + 1]]`
-
 xyz = np.random.rand(num_points, 3)
+
+# Manually generating random neighbors in CSR format
 nn_ptr = np.r_[0, np.random.randint(low=0, high=30, size=num_points).cumsum()]
 nn = np.random.randint(low=0, high=num_points, size=nn_ptr[-1])
+
+# Converting k-nearest neighbors to CSR format
+from sklearn.neighbors import NearestNeighbors
+k = 20
+kneigh = NearestNeighbors(n_neighbors=k).fit(xyz).kneighbors(xyz)
+nn_ptr = np.arange(num_points + 1) * k
+nn = kneigh[1].flatten()
+
+# Converting radius neighbors to CSR format
+from sklearn.neighbors import NearestNeighbors
+radius = 0.1
+rneigh = NearestNeighbors(radius=radius).fit(xyz).radius_neighbors(xyz)
+nn_ptr = np.r_[0, np.array([x.shape[0] for x in rneigh[1]]).cumsum()]
+nn = np.concatenate(rneigh[1])
 
 # Make sure xyz are float32 and nn and nn_ptr are uint32
 xyz = xyz.astype('float32')
@@ -34,6 +35,9 @@ nn = nn.astype('uint32')
 xyz = np.ascontiguousarray(xyz)
 nn_ptr = np.ascontiguousarray(nn_ptr)
 nn = np.ascontiguousarray(nn)
+
+# Print details on how pgeof works and expected input parameters
+print(help(pgeof))
 
 # Features have shape [N, 12]:
 #   0 - linearity
@@ -49,5 +53,5 @@ nn = np.ascontiguousarray(nn)
 #  10 - curvature
 #  11 - optimal neighborhood size (if 'k_step' argument is used)
 geof = pgeof(
-    xyz, nn, nn_ptr, k_min=k_min, k_step=k_step, k_min_search=k_min_search,
-    verbose=verbose)
+    xyz, nn, nn_ptr, k_min=10, k_step=1, k_min_search=15,
+    verbose=True)
