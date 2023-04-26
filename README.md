@@ -12,7 +12,11 @@
 
 ## 📌 Description
 
-Python wrapper around C++ helper to compute the following local geometric features in parallel on CPU:
+Python wrapper around C++ helper to compute, for each point in a 3D point cloud, local geometric features in parallel on CPU:
+
+<details>
+<summary><b>️List of computed features️</b></summary>
+
 - linearity
 - planarity
 - scattering
@@ -26,21 +30,27 @@ Python wrapper around C++ helper to compute the following local geometric featur
 - curvature
 - optimal neighborhood size
 
+</details>
+
 
 ## 🧱 Installation
 
-Tested
+The following will install the project in a new `pgeof` conda environment.
 
 ```bash
 # clone project
-https://github.com/drprojects/point_geometric_features.git
+git clone https://github.com/drprojects/point_geometric_features.git
 cd point_geometric_features
 
-# Installation in a dedicated conda environment
+# Installation in a new dedicated `pgeof` conda environment
 bash install.sh
 ```
 
-## 🚀 Using `pgeof`
+You can easily adapt `install.sh` to install the project in an already-existing 
+environment.
+
+
+## 🚀 Using Point Geometric Features
 
 The `pgeof` function of the `pgeof` module should be used as follows:
 
@@ -66,11 +76,16 @@ You may check out the provided demonstration script to get started 👇
 python demo.py
 ```
 
+⚠️ Please note the **neighbors are expected in CSR format**. This allows 
+expressing neighborhoods of varying sizes with dense arrays (eg the output of a 
+radius search).
+
 
 ## 💳 Credits
 This implementation was largely inspired from [Superpoint Graph](https://github.com/loicland/superpoint_graph). The main modifications here allow: 
 - parallel computation on all points' local neighborhoods, with neighborhoods of varying sizes
 - more geometric features
+- optimal neighborhood search from this [paper](http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf)
 - some corrections on geometric features computation
 
 
