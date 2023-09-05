@@ -23,12 +23,10 @@ include_dirs = [numpy.get_include()]  # find the Numpy headers
 # compilation and linkage options
 # MIN_OPS_PER_THREAD roughly controls parallelization, see doc in README.md
 if os.name == 'nt':  # windows
-    extra_compile_args = ["/std:c++11", "/openmp",
-                          "-DMIN_OPS_PER_THREAD=10000"]
-    extra_link_args = ["/lgomp"]
+    extra_compile_args = ["/DPGEOF_WINDOWS"]
+    extra_link_args = []
 elif os.name == 'posix':  # linux
-    extra_compile_args = ["-std=c++11", "-fopenmp",
-                          "-DMIN_OPS_PER_THREAD=10000"]
+    extra_compile_args = ["-std=c++11", "-fopenmp"]
     extra_link_args = ["-lgomp"]
 else:
     raise NotImplementedError('OS not yet supported.')

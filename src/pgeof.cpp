@@ -3,16 +3,20 @@
 #include <iostream>
 #include <vector>
 
+#ifdef PGEOF_WINDOWS
+    #include <ppl.h>
+#endif
+
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Eigenvalues>
 
 namespace ei = Eigen;
 
 struct pcaOutput {
-    std::array<float,3> val;
-    std::array<float,3> v0;
-    std::array<float,3> v1;
-    std::array<float,3> v2;
+    std::array<float, 3> val;
+    std::array<float, 3> v0;
+    std::array<float, 3> v1;
+    std::array<float, 3> v2;
     float eigenentropy;
 };
 typedef struct pcaOutput PCAOutput;
@@ -54,16 +58,11 @@ PCAOutput neighborhood_pca(
         es.eigenvalues()[0].real(),
         es.eigenvalues()[1].real(),
         es.eigenvalues()[2].real()};
-    std::vector<int> indices(3);
-    std::size_t n(0);
-    std::generate(
-        std::begin(indices),
-        std::end(indices),
-        [&]{ return n++; });
+    std::array<std::size_t, 3> indices = {0, 1, 2};
     std::sort(
         std::begin(indices),
         std::end(indices),
-        [&](int i1, int i2) { return ev[i1] > ev[i2]; } );
+        [&](std::size_t i1, std::size_t i2) { return ev[i1] > ev[i2]; } );
     std::array<float,3> val = {
         (std::max(ev[indices[0]],0.f)),
         (std::max(ev[indices[1]],0.f)),
@@ -124,15 +123,20 @@ void compute_geometric_features(
 {
     // Each point can be treated in parallel
     std::size_t s_point = 0;
+
+    #ifdef PGEOF_WINDOWS
+    concurrency::parallel_for(std::size_t(0), std::size_t(n_points), [&](std::size_t i_point)
+    #else
     #pragma omp parallel for schedule(static)
     for (std::size_t i_point = 0; i_point < n_points; i_point++)
+    #endif
     {
         // Recover the points' total number of neighbors
         const std::size_t k_nn = nn_ptr[i_point + 1] - nn_ptr[i_point];
 
         // If the cloud has only one point, populate the final feature
         // vector with zeros and continue
-        if (k_nn < k_min or k_nn <= 0)
+        if (k_nn < k_min ||  k_nn <= 0)
         {
             features[i_point * 12 + 0]  = 0.f;
             features[i_point * 12 + 1]  = 0.f;
@@ -146,7 +150,11 @@ void compute_geometric_features(
             features[i_point * 12 + 9]  = 0.f;
             features[i_point * 12 + 10] = 0.f;
             features[i_point * 12 + 11] = 0.f;
+            #ifdef PGEOF_WINDOWS
+            return;
+            #else
             continue;
+            #endif
         }
 
         // Compute the PCA for neighborhoods of increasing sizes. The
@@ -191,10 +199,10 @@ void compute_geometric_features(
         }
 
         // Recover the eigenvalues and eigenvectors from the PCA
-        const std::array<float,3> & val = pca.val;
-        const std::array<float,3> & v0 = pca.v0;
-        const std::array<float,3> & v1 = pca.v1;
-        const std::array<float,3> & v2 = pca.v2;
+        const std::array<float, 3> & val = pca.val;
+        const std::array<float, 3> & v0 = pca.v0;
+        const std::array<float, 3> & v1 = pca.v1;
+        const std::array<float, 3> & v2 = pca.v2;
 
         // Compute the dimensionality features. The 1e-3 term is meant
         // to stabilize the division when the cloud's 3rd eigenvalue is
@@ -205,9 +213,9 @@ void compute_geometric_features(
         const float val2       = std::sqrt(val[2]);
         const float linearity  = (val0 - val1) / (val0 + 1e-3f);
         const float planarity  = (val1 - val2) / (val0 + 1e-3f);
-        const float scattering = val2 / (val0 + 1e-3);
+        const float scattering = val2 / (val0 + 1e-3f);
         const float length     = val0;
-        const float surface    = std::sqrt(val0 * val1 + 1e-6);
+        const float surface    = std::sqrt(val0 * val1 + 1e-6f);
         const float volume     = std::pow(val0 * val1 * val2 + 1e-9f, 1.f / 3.f);
         const float curvature  = val2 / (val0 + val1 + val2 + 1e-3f);
 
@@ -251,6 +259,9 @@ void compute_geometric_features(
             std::cout << ceil(s_point * 100 / n_points) << "% done          \r" << std::flush;
         }
     }
+    #ifdef PGEOF_WINDOWS
+    );
+    #endif
 
     // Final print to start on a new line
     if (verbose)
