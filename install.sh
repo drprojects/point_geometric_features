@@ -52,7 +52,6 @@ source ${CONDA_DIR}/etc/profile.d/conda.sh
 conda activate ${PROJECT_NAME}
 
 # Dependencies
-conda install pip numpy -y
 conda install -c omnia eigen3 -y
 
-python python/setup.py build_ext --include-dirs=$CONDA_PREFIX/include
+python setup.py build_ext --include-dirs=$CONDA_PREFIX/include

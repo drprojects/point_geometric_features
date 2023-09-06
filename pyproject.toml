@@ -1,0 +1,11 @@
+[build-system]
+requires = ["wheel", "setuptools", "oldest-supported-numpy"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pgeof"
+version = "0.0.1"
+
+dependencies = [
+    "numpy"
+]
