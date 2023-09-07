@@ -7,7 +7,6 @@
 
 #include "pgeof.hpp"
 
-
 /* template for handling several index types in compute_geometric_features */
 static PyObject* pgeof(
     PyArrayObject *py_xyz, PyArrayObject * py_nn, PyArrayObject * py_nn_ptr,
@@ -48,13 +47,13 @@ static PyObject* pgeof_cpy(PyObject* self, PyObject *args, PyObject *kwargs)
 
     // Build variable names used for input args + kwargs parsing
     static char *keywords[] = {
-        "xyz",
-        "nn",
-        "nn_ptr",
-        "k_min",
-        "k_step",
-        "k_min_search",
-        "verbose",
+        (char*)"xyz",
+        (char*)"nn",
+        (char*)"nn_ptr",
+        (char*)"k_min",
+        (char*)"k_step",
+        (char*)"k_min_search",
+        (char*)"verbose",
         NULL};
 
     /* parse the input, from Python Object to C PyArray */

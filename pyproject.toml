@@ -5,7 +5,25 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pgeof"
 version = "0.0.1"
+readme = "README.md"
+description = "Compute the geometric features associated with each point's neighborhood:"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Loic Landrieu", email = "loic.landrieu@enpc.fr"},
+  {name = "Damien Robert", email = "damien.robert@ign.fr"}
+]
+keywords = ["point clouds", "features", "3D", "LiDAR"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python",
+  "Topic :: Scientific/Engineering"
+]
 
 dependencies = [
     "numpy"
 ]
+
+[project.urls]
+homepage = "https://github.com/drprojects/superpoint_transformer"
+repository = "https://github.com/drprojects/superpoint_transformer"
