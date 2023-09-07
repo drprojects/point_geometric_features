@@ -14,6 +14,14 @@ name = "pgeof"
 
 include_dirs = [numpy.get_include(), "include"]  # find the Numpy headers
 
+EIGEN_LIB_PATH = os.environ.get("EIGEN_LIB_PATH", None)
+
+if EIGEN_LIB_PATH is not None:
+    include_dirs.append(EIGEN_LIB_PATH)
+
+print("includes")
+print(include_dirs)
+
 # Compilation and linkage options
 if os.name == 'nt':  # windows
     extra_compile_args = ["/DPGEOF_WINDOWS"]
@@ -25,7 +33,7 @@ else:
     raise NotImplementedError('OS not yet supported.')
 
 
-###  Compilation
+#  Compilation
 mod = Extension(
     name,
     # list source files
