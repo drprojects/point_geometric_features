@@ -30,11 +30,26 @@ Python wrapper around C++ helper to compute, for each point in a 3D point cloud,
 - volume
 - curvature
 - optimal neighborhood size
-
 </details>
 
 
 ## 🧱 Installation
+
+```bash
+# clone project
+git clone https://github.com/drprojects/point_geometric_features.git
+cd point_geometric_features
+
+# run 
+pyhon -m pip install .
+```
+
+Pgeof depends on [Eigen library](https://eigen.tuxfamily.org/) and numpy headers at build time.
+The good version of numpy will be fetch from PyPI automatically but your are responsible for providing
+the path to the Eigen library you want to use (for example py using `CXXFLAGS` variable on Linux)
+
+Pgeof will be soon available as pre compiled package on PyPI.
+
 
 The following will install the project in a new `pgeof` conda environment.
 
@@ -49,7 +64,6 @@ bash install.sh
 
 You can easily adapt `install.sh` to install the project in an already-existing 
 environment.
-
 
 ## 🚀 Using Point Geometric Features
 

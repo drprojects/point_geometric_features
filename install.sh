@@ -18,15 +18,17 @@ echo
 
 echo "_______________ Prerequisites _______________"
 echo "  - conda"
-echo "  - cmake"
-echo
 echo
 
 
 echo "____________ Pick conda install _____________"
 echo
 # Recover the path to conda on your machine
-CONDA_DIR=`realpath ~/anaconda3`
+CONDA_DIR=`realpath ~/miniconda3`
+if (test -z $CONDA_DIR) || [ ! -d $CONDA_DIR ]
+then
+  CONDA_DIR=`realpath ~/anaconda3`
+fi
 
 while (test -z $CONDA_DIR) || [ ! -d $CONDA_DIR ]
 do
@@ -52,6 +54,7 @@ source ${CONDA_DIR}/etc/profile.d/conda.sh
 conda activate ${PROJECT_NAME}
 
 # Dependencies
+conda install -c anaconda pip 
 conda install -c omnia eigen3 -y
-
-python setup.py build_ext --include-dirs=$CONDA_PREFIX/include
+export CXXFLAGS="-I$CONDA_PREFIX/include"   # Add Eigen includes to the path for the C++ compiler
+python -m pip install .
