@@ -8,7 +8,7 @@ PYTHON=3.8
 # Installation script for Anaconda3 environments
 echo "#############################################"
 echo "#                                           #" 
-echo "#           Deep View Aggregation           #"
+echo "#          Point Geometric Features         #"
 echo "#                 Installer                 #"
 echo "#                                           #" 
 echo "#############################################"
@@ -44,7 +44,7 @@ echo
 echo "________________ Installation _______________"
 echo
 
-# Create deep_view_aggregation environment from yml
+# Create a conda environment from yml
 conda create --name $PROJECT_NAME python=$PYTHON -y
 
 # Activate the env
