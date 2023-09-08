@@ -35,20 +35,30 @@ Python wrapper around C++ helper to compute, for each point in a 3D point cloud,
 
 ## 🧱 Installation
 
+Pgeof will __soon__ be available as pre compiled package on PyPI for both Linux and Windows OSes.
+
+```bash
+python -m pip install pgeof 
+```
+
+### building from sources
+
+Pgeof depends on [Eigen library](https://eigen.tuxfamily.org/) and numpy headers at build time.
+The good version of numpy will be fetched from PyPI automatically by the build system but your are responsible for providing
+the path to the Eigen library you want to use (for example py using `CXXFLAGS` variable on Linux or setting `EIGEN_LIB_PATH`)
+
 ```bash
 # clone project
 git clone https://github.com/drprojects/point_geometric_features.git
 cd point_geometric_features
 
-# run 
+# set the EIGEN_LIB_PATH if needed
+export EIGEN_LIB_PATH="path_to_eigen_root_dir"
+# build and install the package
 pyhon -m pip install .
 ```
 
-Pgeof depends on [Eigen library](https://eigen.tuxfamily.org/) and numpy headers at build time.
-The good version of numpy will be fetch from PyPI automatically but your are responsible for providing
-the path to the Eigen library you want to use (for example py using `CXXFLAGS` variable on Linux or setting `EIGEN_LIB_PATH`)
-
-Pgeof will be soon available as pre compiled package on PyPI.
+### conda 
 
 The following will install the project in a new `pgeof` conda environment.
 
@@ -69,7 +79,7 @@ environment.
 The `pgeof` function should be used as follows:
 
 ```python
-from src import pgeof
+import pgeof
 
 pgeof(
     xyz,              # [n_points, 3] float32 2D array - 3D point coordinates
