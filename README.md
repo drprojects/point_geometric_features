@@ -46,10 +46,9 @@ pyhon -m pip install .
 
 Pgeof depends on [Eigen library](https://eigen.tuxfamily.org/) and numpy headers at build time.
 The good version of numpy will be fetch from PyPI automatically but your are responsible for providing
-the path to the Eigen library you want to use (for example py using `CXXFLAGS` variable on Linux)
+the path to the Eigen library you want to use (for example py using `CXXFLAGS` variable on Linux or setting `EIGEN_LIB_PATH`)
 
 Pgeof will be soon available as pre compiled package on PyPI.
-
 
 The following will install the project in a new `pgeof` conda environment.
 

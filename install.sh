@@ -56,5 +56,5 @@ conda activate ${PROJECT_NAME}
 # Dependencies
 conda install -c anaconda pip 
 conda install -c omnia eigen3 -y
-export CXXFLAGS="-I$CONDA_PREFIX/include"   # Add Eigen includes to the path for the C++ compiler
+export EIGEN_LIB_PATH="$CONDA_PREFIX/include"   # Add Eigen includes to the path for the C++ compiler
 python -m pip install .
