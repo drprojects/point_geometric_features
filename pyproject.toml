@@ -1,0 +1,32 @@
+[build-system]
+requires = ["wheel", "setuptools", "oldest-supported-numpy"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pgeof"
+version = "0.0.1"
+readme = "README.md"
+description = "Compute the geometric features associated with each point's neighborhood:"
+requires-python = ">=3.8,<3.12"
+license = {file = "LICENSE"}
+authors = [
+  {name = "Loic Landrieu", email = "loic.landrieu@enpc.fr"},
+  {name = "Damien Robert", email = "damien.robert@ign.fr"}
+]
+keywords = ["point clouds", "features", "3D", "LiDAR"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python",
+  "Topic :: Scientific/Engineering"
+]
+
+dependencies = [
+    "numpy"
+]
+
+[project.urls]
+homepage = "https://github.com/drprojects/superpoint_transformer"
+repository = "https://github.com/drprojects/superpoint_transformer"
+
+[tool.cibuildwheel]
+build = "cp3{8,9,10,11}-*" # No pypy and python 3.12 yet (because it should requires numpy 1.26)

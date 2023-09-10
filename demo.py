@@ -1,7 +1,4 @@
-import sys
-import os.path as osp
-sys.path.append(osp.join(osp.realpath(osp.dirname(__file__))))
-from src import pgeof
+from pgeof import pgeof
 import numpy as np
 
 # Generate a random synthetic point cloud

@@ -10,16 +10,17 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Eigenvalues>
 
+#pragma once
+
 namespace ei = Eigen;
 
-struct pcaOutput {
+struct PCAOutput {
     std::array<float, 3> val;
     std::array<float, 3> v0;
     std::array<float, 3> v1;
     std::array<float, 3> v2;
     float eigenentropy;
 };
-typedef struct pcaOutput PCAOutput;
 typedef ei::Matrix<float, 3, 3> Matrix3f;
 typedef ei::Matrix<float, 3, 1> Vector3f;
 typedef ei::Matrix<float, ei::Dynamic, 3> PointCloud;
@@ -150,6 +151,7 @@ void compute_geometric_features(
             features[i_point * 12 + 9]  = 0.f;
             features[i_point * 12 + 10] = 0.f;
             features[i_point * 12 + 11] = 0.f;
+            s_point++;
             #ifdef PGEOF_WINDOWS
             return;
             #else
@@ -161,11 +163,10 @@ void compute_geometric_features(
         // neighborhood size with the lowest eigenentropy will be kept.
         // Do not search optimal neighborhood size if k_step < 1
         PCAOutput pca;
-        std::size_t k_optimal;
+        std::size_t k_optimal =  k_nn;
         if (k_step < 1)
         {
             pca = neighborhood_pca(xyz, nn, nn_ptr, i_point, k_nn);
-            k_optimal = k_nn;
         }
         else
         {

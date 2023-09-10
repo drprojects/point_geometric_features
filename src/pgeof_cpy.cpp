@@ -4,8 +4,8 @@
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
 #include <numpy/arrayobject.h>
-#include "../src/pgeof.cpp"
 
+#include "pgeof.hpp"
 
 /* template for handling several index types in compute_geometric_features */
 static PyObject* pgeof(
@@ -47,13 +47,13 @@ static PyObject* pgeof_cpy(PyObject* self, PyObject *args, PyObject *kwargs)
 
     // Build variable names used for input args + kwargs parsing
     static char *keywords[] = {
-        "xyz",
-        "nn",
-        "nn_ptr",
-        "k_min",
-        "k_step",
-        "k_min_search",
-        "verbose",
+        (char*)"xyz",
+        (char*)"nn",
+        (char*)"nn_ptr",
+        (char*)"k_min",
+        (char*)"k_step",
+        (char*)"k_min_search",
+        (char*)"verbose",
         NULL};
 
     /* parse the input, from Python Object to C PyArray */

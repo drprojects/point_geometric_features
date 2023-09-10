@@ -30,11 +30,35 @@ Python wrapper around C++ helper to compute, for each point in a 3D point cloud,
 - volume
 - curvature
 - optimal neighborhood size
-
 </details>
 
 
 ## 🧱 Installation
+
+Pgeof will __soon__ be available as pre compiled package on PyPI for both Linux and Windows OSes.
+
+```bash
+python -m pip install pgeof 
+```
+
+### building from sources
+
+Pgeof depends on [Eigen library](https://eigen.tuxfamily.org/) and numpy headers at build time.
+The good version of numpy will be fetched from PyPI automatically by the build system but your are responsible for providing
+the path to the Eigen library you want to use (for example py using `CXXFLAGS` variable on Linux or setting `EIGEN_LIB_PATH`)
+
+```bash
+# clone project
+git clone https://github.com/drprojects/point_geometric_features.git
+cd point_geometric_features
+
+# set the EIGEN_LIB_PATH if needed
+export EIGEN_LIB_PATH="path_to_eigen_root_dir"
+# build and install the package
+pyhon -m pip install .
+```
+
+### conda 
 
 The following will install the project in a new `pgeof` conda environment.
 
@@ -50,13 +74,12 @@ bash install.sh
 You can easily adapt `install.sh` to install the project in an already-existing 
 environment.
 
-
 ## 🚀 Using Point Geometric Features
 
 The `pgeof` function should be used as follows:
 
 ```python
-from src import pgeof
+from pgeof import pgeof
 
 pgeof(
     xyz,              # [n_points, 3] float32 2D array - 3D point coordinates
@@ -123,28 +146,4 @@ This implementation was largely inspired from [Superpoint Graph](https://github.
 
 ## License
 
-Point Geometric Features is licensed under the MIT License.
-
-```
-MIT License
-
-Copyright (c) 2021 ashleve
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+Point Geometric Features is licensed under the MIT License. 
