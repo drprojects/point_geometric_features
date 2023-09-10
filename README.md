@@ -79,7 +79,7 @@ environment.
 The `pgeof` function should be used as follows:
 
 ```python
-import pgeof
+from pgeof import pgeof
 
 pgeof(
     xyz,              # [n_points, 3] float32 2D array - 3D point coordinates

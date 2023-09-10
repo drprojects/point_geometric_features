@@ -1,4 +1,4 @@
-import pgeof
+from pgeof import pgeof
 import numpy as np
 
 # Generate a random synthetic point cloud
