@@ -55,7 +55,7 @@ cd point_geometric_features
 # set the EIGEN_LIB_PATH if needed
 export EIGEN_LIB_PATH="path_to_eigen_root_dir"
 # build and install the package
-pyhon -m pip install .
+python -m pip install .
 ```
 
 ### conda 
