@@ -1,0 +1,10 @@
+[submodule "eigen"]
+	path = third_party/eigen
+	url = https://gitlab.com/libeigen/eigen
+	branch = 3.4
+[submodule "nanoflann"]
+	path = third_party/nanoflann
+	url = https://github.com/jlblancoc/nanoflann
+[submodule "taskflow"]
+	path = third_party/taskflow
+	url = https://github.com/taskflow/taskflow
