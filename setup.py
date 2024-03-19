@@ -7,6 +7,7 @@ Loic Landrieu 2023
 
 from setuptools import setup, Extension
 import numpy
+import platform
 import os
 
 # targets and compile options
@@ -19,18 +20,19 @@ EIGEN_LIB_PATH = os.environ.get("EIGEN_LIB_PATH", None)
 if EIGEN_LIB_PATH is not None:
     include_dirs.append(EIGEN_LIB_PATH)
 
-print("includes")
-print(include_dirs)
 
 # Compilation and linkage options
-if os.name == 'nt':  # windows
+if platform.system() == "Windows":
     extra_compile_args = ["/DPGEOF_WINDOWS"]
     extra_link_args = []
-elif os.name == 'posix':  # linux
+elif platform.system() == "Linux":
     extra_compile_args = ["-std=c++11", "-fopenmp"]
     extra_link_args = ["-lgomp"]
+elif platform.system() == "Darwin":
+    extra_compile_args = ["-std=c++11", "-fopenmp"]
+    extra_link_args = ["-lomp"]
 else:
-    raise NotImplementedError('OS not yet supported.')
+    raise NotImplementedError("OS not yet supported.")
 
 
 #  Compilation
