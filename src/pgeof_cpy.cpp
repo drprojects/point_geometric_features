@@ -28,7 +28,7 @@ static PyObject* pgeof(
     compute_geometric_features(
         c_xyz, c_nn, c_nn_ptr, n_points, features, k_min, k_step, k_min_search, verbose);
 
-    return Py_BuildValue("O", py_features);
+    return Py_BuildValue("N", py_features);
 }
 
 
