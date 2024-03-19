@@ -11,7 +11,7 @@ requires-python = ">=3.8,~=3.12"
 license = {file = "LICENSE"}
 authors = [
   {name = "Loic Landrieu", email = "loic.landrieu@enpc.fr"},
-  {name = "Damien Robert", email = "damien.robert@ign.fr"}
+  {name = "Damien Robert", email = "damien.robert@uzh.ch"}
 ]
 keywords = ["point clouds", "features", "3D", "LiDAR"]
 classifiers = [
