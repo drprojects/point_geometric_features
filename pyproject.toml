@@ -25,8 +25,8 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://github.com/drprojects/superpoint_transformer"
-repository = "https://github.com/drprojects/superpoint_transformer"
+homepage = "https://github.com/drprojects/point_geometric_features"
+repository = "https://github.com/drprojects/point_geometric_features"
 
 [tool.cibuildwheel]
 build = "cp3{8,9,10,11,12}-*"
