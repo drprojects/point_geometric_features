@@ -25,6 +25,12 @@ using MatrixCloud = Eigen::Matrix<real_t, Eigen::Dynamic, Eigen::Dynamic, Eigen:
 template <typename real_t>
 using DRefMatrixCloud = nb::DRef<const MatrixCloud<real_t>>;
 
+// epsilon definition, for now same for float an double
+// the eps is meant to stabilize the division when the cloud's 3rd eigenvalue is near 0
+template <typename real_t> constexpr real_t epsilon;
+template <> constexpr float  epsilon<float>  = 1e-3f;
+template <> constexpr double epsilon<double> = 1e-3;
+
 template <typename real_t>
 struct PCAResult
 {
@@ -34,6 +40,7 @@ struct PCAResult
     Vec3<real_t> v2;
 };
 
+// enum of features
 typedef enum EFeatureID
 {
     Linearity = 0,
@@ -101,7 +108,7 @@ static inline PCAResult<real_t> pca_from_pointcloud(const PointCloud<real_t>& cl
  * @param nn_ptr: [n_points+1] Integer 1D array. Pointers wrt 'nn'. More specifically, the neighbors of point 'i'
  *  are 'nn[nn_ptr[i]:nn_ptr[i + 1]]'
  * @param i_point the index of the 'central point' or  point
- * @param k_nnn the number of neighbhors to take into account to compute the PCA. It's the caller responsability
+ * @param k_nnn the number of neighbors to take into account to compute the PCA. It's the caller responsibility
  * to ensure k_nn won't overflow nn_ptr array.
  * @returns A PCAResult
  */
@@ -135,12 +142,11 @@ static PCAResult<real_t> pca_from_neighborhood(
 template <typename real_t>
 static inline real_t compute_eigentropy(const PCAResult<real_t>& pca)
 {
-    constexpr real_t EPSILON = real_t(1e-3);
-    // Compute the eigenentropy as defined in:
+    // Compute the eigentropy as defined in:
     // http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf
-    const real_t       val_sum = pca.val.sum() + EPSILON;
+    const real_t       val_sum = pca.val.sum() + epsilon<real_t>;
     const Vec3<real_t> e       = pca.val / val_sum;
-    return (-e(0) * std::log(e(0) + EPSILON) - e(1) * std::log(e(1) + EPSILON) - e(2) * std::log(e(2) + EPSILON));
+    return (-e(0) * std::log(e(0) + epsilon<real_t>) - e(1) * std::log(e(1) + epsilon<real_t>) - e(2) * std::log(e(2) + epsilon<real_t>));
 };
 
 /**
@@ -154,19 +160,18 @@ static inline real_t compute_eigentropy(const PCAResult<real_t>& pca)
 template <typename real_t>
 static void compute_features(const PCAResult<real_t>& pca, real_t* features)
 {
-    constexpr real_t EPSILON   = real_t(1e-3);
-    constexpr real_t SQ_EPS    = real_t(1e-6);
-    constexpr real_t CUB_EPS   = real_t(1e-9);
-    constexpr real_t ONE_THIRD = real_t(1.) / real_t(3.);
+    constexpr real_t sq_eps    = real_t(1e-6);
+    constexpr real_t cub_eps   = real_t(1e-9);
+    constexpr real_t one_third = real_t(1.) / real_t(3.);
 
-    // Compute the dimensionality features. The 1e-3 term is meant
+    // Compute the dimensionality features. The eps term is meant
     // to stabilize the division when the cloud's 3rd eigenvalue is
     // near 0 (points lie in 1D or 2D). Note we take the sqrt of the
-    // eigenvalues since the PCA eigenvaluess are homogeneous to m²
+    // eigenvalues since the PCA eigenvalues are homogeneous to m²
     const real_t val0      = std::sqrt(pca.val(0));
     const real_t val1      = std::sqrt(pca.val(1));
     const real_t val2      = std::sqrt(pca.val(2));
-    const real_t val0_fact = real_t(1.0) / (val0 + EPSILON);
+    const real_t val0_fact = real_t(1.0) / (val0 + epsilon<real_t>);
 
     features[EFeatureID::Normal_x]   = pca.v2(0);
     features[EFeatureID::Normal_y]   = pca.v2(1);
@@ -175,9 +180,9 @@ static void compute_features(const PCAResult<real_t>& pca, real_t* features)
     features[EFeatureID::Planarity]  = (val1 - val2) * val0_fact;
     features[EFeatureID::Scattering] = val2 * val0_fact;
     features[EFeatureID::Length]     = val0;
-    features[EFeatureID::Surface]    = std::sqrt(val0 * val1 + SQ_EPS);
-    features[EFeatureID::Volume]     = std::pow(val0 * val1 * val2 + CUB_EPS, ONE_THIRD);
-    features[EFeatureID::Curvature]  = val2 / (val0 + val1 + val2 + EPSILON);
+    features[EFeatureID::Surface]    = std::sqrt(val0 * val1 + sq_eps);
+    features[EFeatureID::Volume]     = std::pow(val0 * val1 * val2 + cub_eps, one_third);
+    features[EFeatureID::Curvature]  = val2 / (val0 + val1 + val2 + epsilon<real_t>);
 
     // Compute the verticality. NB we account for the edge case
     // where all features are 0
@@ -197,7 +202,7 @@ static void compute_features(const PCAResult<real_t>& pca, real_t* features)
 /**
  * Given a PCA result compute only a subset of features.
  *
- * This function intends on mimicking the behavior of jakteristics
+ * This function intends on mimicking the behavior of Jakteristics
  *
  * @param[in] pca PCAResult
  * @param[in] selected_feature a vector of the type of features to compute
@@ -208,7 +213,6 @@ template <typename real_t>
 void compute_selected_features(
     const PCAResult<real_t>& pca, const std::vector<EFeatureID>& selected_feature, real_t* feature_results)
 {
-    constexpr real_t EPSILON = 1e-3f;
     // Compute the dimensionality features. The 1e-3 term is meant
     // to stabilize the division when the cloud's 3rd eigenvalue is
     // near 0 (points lie in 1D or 2D). Note we take the sqrt of the
@@ -216,9 +220,9 @@ void compute_selected_features(
     const real_t val0      = std::sqrt(pca.val(0));
     const real_t val1      = std::sqrt(pca.val(1));
     const real_t val2      = std::sqrt(pca.val(2));
-    const real_t val0_fact = real_t(1.0) / (val0 + EPSILON);
+    const real_t val0_fact = real_t(1.0) / (val0 + epsilon<real_t>);
 
-    const auto compute_feature = [val0, val1, val2, val0_fact, &pca, EPSILON](
+    const auto compute_feature = [val0, val1, val2, val0_fact, &pca](
                                      const EFeatureID feature_id, const size_t output_id, auto* feature_results)
     {
         switch (feature_id)
@@ -253,7 +257,7 @@ void compute_selected_features(
                     real_t(1.) / real_t(3.));  // 1e-9 eps is a too small value for float32 so we fallback to 1e-8
                 break;
             case EFeatureID::Curvature:
-                feature_results[output_id] = val2 / (val0 + val1 + val2 + EPSILON);
+                feature_results[output_id] = val2 / (val0 + val1 + val2 + epsilon<real_t>);
                 break;
             case EFeatureID::VerticalityPGEOF:
                 // the verticality as defined in PGEOF
@@ -271,9 +275,9 @@ void compute_selected_features(
                             pca.val(2) * std::abs(pca.v2(2))};
 
                     feature_results[output_id] = unary_vector(2) / unary_vector.norm();
-                    // TODO: jakteristics compute this as feature_results[output_id] = real_t(1.0) -
+                    // TODO: Jakteristics compute this as feature_results[output_id] = real_t(1.0) -
                     // std::abs(pca.v2(2));
-                    // It seems to be the most common formula for the verticality in the litterature
+                    // It seems to be the most common formula for the verticality in the literature
                 }
                 break;
             case EFeatureID::Verticality:
