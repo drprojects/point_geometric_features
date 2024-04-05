@@ -31,7 +31,7 @@ Python wrapper around C++ helper to compute, for each point in a 3D point cloud,
 - optimal neighborhood size
 </details>
 
-The wrapper allows to compute feature in multiple fashions (on the fly subset of features _a la_ jakteritics or an array of features, multiscale features). Moreover, it offers basic interfaces to compute fast K-NN or Radius search on point clouds. 
+The wrapper allows to compute feature in multiple fashions (on the fly subset of features _a la_ jakteristics, an array of features or multiscale features...). Moreover, it offers basic interfaces to compute fast K-NN or Radius search on point clouds. 
 The overall code is not intended to be DRY nor generic, it aims at providing efficient as possible implementations for some limited scopes and usages.
 
 ## 🧱 Installation
@@ -59,13 +59,59 @@ python -m pip install .
 
 ## 🚀 Using Point Geometric Features
 
-👇 You may check out the provided `test_pgeof.py` script to get started.
+👇 You may check out the provided `tests/test_pgeof.py` script to get started.
+using `help(pgeof2)` could be helpfull.
 
-⚠️ Please note the **neighbors are expected in CSR format**. This allows 
-expressing neighborhoods of varying sizes with dense arrays (eg the output of a 
+⚠️ Please note that for some function the **neighbors are expected in CSR format**. 
+This allows expressing neighborhoods of varying sizes with dense arrays (eg the output of a 
 radius search). Here are examples of how to easily convert typical k-NN or 
 radius-NN neighborhoods to CSR format.
 
+
+```python
+import pgeof2
+import numpy as np
+
+# Generate a random synthetic point cloud and k-nearest neighbors
+num_points = 10000
+k = 20
+xyz = np.random.rand(num_points, 3).astype("float32")
+knn, _ = pgeof2.knn_search(xyz, xyz, k)
+
+# Converting k-nearest neighbors to CSR format
+nn_ptr = np.arange(num_points + 1) * k
+nn = knn.flatten()
+```
+
+```python
+import pgeof2
+import numpy as np
+
+# Generate a random synthetic point cloud and k-nearest neighbors
+num_points = 10000
+radius = 0.1
+xyz = np.random.rand(num_points, 3).astype("float32")
+knn, _ = pgeof2.radius_search(xyz, xyz, radius, 50)
+
+def _sizes_to_ptrs(sizes):
+    zero = np.zeros(1, dtype="uint32")
+    return np.concatenate((zero, sizes)).cumsum(axis=0)
+
+# Converting radius neighbors to CSR format
+iota = np.arange(num_points).reshape(-1, 1)
+nn = np.concatenate((iota, knn), axis=1)
+k = nn.shape[1]
+n_missing = (nn < 0).sum(axis=1)
+if (n_missing > 0).any():
+    sizes = k - n_missing
+    nn = nn[nn >= 0]
+    nn_ptr = _sizes_to_ptrs(sizes)
+else:
+    nn = nn.flatten()
+    nn_ptr = np.arange(num_points + 1) * k
+nn = nn.astype("uint32") 
+nn_ptr = nn_ptr.astype("uint32") 
+```
 
 ## 💳 Credits
 This implementation was largely inspired from [Superpoint Graph](https://github.com/loicland/superpoint_graph). The main modifications here allow: 
