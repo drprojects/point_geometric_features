@@ -60,7 +60,7 @@ python -m pip install .
 ## 🚀 Using Point Geometric Features
 
 👇 You may check out the provided `tests/test_pgeof.py` script to get started.
-using `help(pgeof2)` could be helpfull.
+using `help(pgeof2)` could be helpful.
 
 ⚠️ Please note that for some function the **neighbors are expected in CSR format**. 
 This allows expressing neighborhoods of varying sizes with dense arrays (eg the output of a 

@@ -303,7 +303,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
 /**
  * Compute a selected set of geometric features for a point cloud via radius search.
  *
- * This function aims to mimick the behavior of jakteristics and provide an efficent way
+ * This function aims to mimic the behavior of jakteristics and provide an efficient way
  * to compute a limited set of features.
  *
  * @param xyz the point cloud
