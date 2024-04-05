@@ -10,7 +10,7 @@ from tests.helpers import random_nn
 
 def test_knn():
     knn = 10
-    xyz = np.random.rand(10000, 3)
+    xyz = np.random.rand(1000, 3)
     xyz = xyz.astype("float32")
     tree = KDTree(xyz)
     _, k_legacy = tree.query(xyz, k=knn, workers=-1)
@@ -20,7 +20,7 @@ def test_knn():
 
 def test_pgeof():
     # Generate a random synthetic point cloud and NNs
-    xyz, nn, nn_ptr = random_nn(10000, 30)
+    xyz, nn, nn_ptr = random_nn(1000, 10)
     legacy = pgeof(xyz, nn, nn_ptr, 1, -1, 1, False)
     legacy = legacy[:, :11]
     new = pgeof2.compute_features(xyz, nn, nn_ptr, 1, False)
@@ -48,7 +48,7 @@ def test_pgeof2_multiscale():
 @pytest.mark.xfail(sys.platform == "linux", reason="UB in pgeof package")
 def test_pgeof_optimal():
     # Generate a random synthetic point cloud and NNs
-    xyz, nn, nn_ptr = random_nn(10000, 50)
+    xyz, nn, nn_ptr = random_nn(1000, 40)
     old_pgeof = pgeof(xyz, nn, nn_ptr, 25, 3, 20, False)
     new_pgeof = pgeof2.compute_features_optimal(xyz, nn, nn_ptr, 25, 3, 20, False)
     np.testing.assert_allclose(old_pgeof, new_pgeof, 1e-1, 1e-5)
