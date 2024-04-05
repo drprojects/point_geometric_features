@@ -66,7 +66,7 @@ commands = ls {envtmpdir}
 
 [tool.cibuildwheel]
 build = "cp3{9,10,11,12}-*"
-archs = ["auto64"] #limit to 64bits builds
+archs = ["auto64"] # limit to 64bits builds
 
 # Needed for full C++17 support
 [tool.cibuildwheel.macos.environment]

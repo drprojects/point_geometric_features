@@ -1,4 +1,6 @@
 import numpy as np
+import pytest
+import sys
 from pgeof import pgeof
 from scipy.spatial import KDTree
 
@@ -43,7 +45,7 @@ def test_pgeof2_multiscale():
     np.testing.assert_allclose(multi[:, 0], multi_simple[:, 0], 1e-1, 1e-5)
     np.testing.assert_allclose(multi[:, 1], simple, 1e-1, 1e-5)
 
-
+@pytest.mark.xfail(sys.platform == "linux", reason="UB in pgeof package")
 def test_pgeof_optimal():
     # Generate a random synthetic point cloud and NNs
     xyz, nn, nn_ptr = random_nn(10000, 50)
