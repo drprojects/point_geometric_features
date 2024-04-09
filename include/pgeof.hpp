@@ -84,7 +84,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
     const uint32_t* nn_data     = nn.data();
     const uint32_t* nn_ptr_data = nn_ptr.data();
 
-    real_t*     features = new real_t[n_points * feature_count];
+    real_t* features = (real_t*) calloc(n_points * feature_count, sizeof(real_t));
     nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
     tf::Executor executor;
@@ -167,8 +167,8 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any, feature_count>
     size_t       s_point  = 0;
     const uint32_t* nn_data     = nn.data();
     const uint32_t* nn_ptr_data = nn_ptr.data();
-
-    real_t*      features = new real_t[n_points * n_scales * feature_count];
+    
+    real_t* features = (real_t*) calloc(n_points * n_scales * feature_count, sizeof(real_t));
     nb::capsule  owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
     // Each point can be treated in parallel
@@ -247,7 +247,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
     const uint32_t* nn_data     = nn.data();
     const uint32_t* nn_ptr_data = nn_ptr.data();
 
-    real_t*     features = new real_t[n_points * feature_count];
+    real_t* features = (real_t*) calloc(n_points * feature_count, sizeof(real_t));
     nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
     tf::Executor executor;
@@ -325,7 +325,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>> compute_geome
     const size_t feature_count    = selected_features.size();
 
     const Eigen::Index n_points = xyz.rows();
-    real_t*            features = new real_t[n_points * feature_count];
+    real_t* features = (real_t*) calloc(n_points * feature_count, sizeof(real_t));
     std::fill(features, features + (n_points * feature_count), real_t(0.0));
     nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
