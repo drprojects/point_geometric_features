@@ -17,6 +17,16 @@ def test_knn():
     k_new, _ = pgeof2.knn_search(xyz, xyz, knn)
     np.testing.assert_equal(k_legacy, k_new)
 
+def test_radius_search():
+    knn = 10
+    radius = 0.2
+    xyz = np.random.rand(1000, 3)
+    xyz = xyz.astype("float32")
+    tree = KDTree(xyz)
+    _, k_legacy = tree.query(xyz, k=knn, distance_upper_bound=radius, workers=-1)
+    k_legacy[k_legacy == xyz.shape[0]] = -1
+    k_new, _ = pgeof2.radius_search(xyz, xyz, radius, knn)
+    np.testing.assert_equal(k_legacy, k_new)
 
 def test_pgeof():
     # Generate a random synthetic point cloud and NNs
@@ -44,6 +54,7 @@ def test_pgeof2_multiscale():
     multi_simple = pgeof2.compute_features_multiscale(xyz, nn, nn_ptr, [20], False)
     np.testing.assert_allclose(multi[:, 0], multi_simple[:, 0], 1e-1, 1e-5)
     np.testing.assert_allclose(multi[:, 1], simple, 1e-1, 1e-5)
+
 
 @pytest.mark.xfail(sys.platform == "linux", reason="UB in pgeof package")
 def test_pgeof_optimal():
