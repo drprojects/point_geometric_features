@@ -1,10 +1,8 @@
 import numpy as np
 import pytest
-from pgeof import pgeof
 
-import pgeof2
-from pgeof2 import EFeatureID
-from tests.helpers import random_nn
+import pgeof
+from pgeof import EFeatureID
 
 # Skip if jakteristics import fail
 # it should fail on darwin (macOS) systems
@@ -35,12 +33,12 @@ def test_bench_jak(benchmark, random_point_cloud):
 
 
 @pytest.mark.benchmark(group="feature-computation-jak", disable_gc=True, warmup=True)
-def test_pgeof2(benchmark, random_point_cloud):
+def test_pgeof(benchmark, random_point_cloud):
     knn = 50
     dist = 5.0
 
     def _to_bench_feat():
-        _ = pgeof2.compute_features_selected(
+        _ = pgeof.compute_features_selected(
             random_point_cloud, dist, knn, [EFeatureID.Verticality]
         )
 

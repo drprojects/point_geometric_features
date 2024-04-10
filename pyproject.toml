@@ -3,7 +3,7 @@ requires = ["scikit-build-core >=0.4.3", "nanobind >= 1.9.2"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "pgeof2"
+name = "pgeof"
 version = "0.1.0"
 readme = "README.md"
 description = "Compute the geometric features associated with each point's neighborhood:"
@@ -49,14 +49,13 @@ deps =
   pytest >= 7.4
   pytest-benchmark ~= 4.0
   numpy >= 1.7
-  pgeof
   scipy
   jakteristics;platform_system=="Windows" or platform_system=="Linux" 
 commands = pytest --basetemp="{envtmpdir}" {posargs}
 
 [testenv:bench]
 # globs/wildcards do not work with tox
-commands = pytest --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/bench_pgeof.py tests/bench_jakteristics.py} 
+commands = pytest --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/bench_jakteristics.py} 
 
 [testenv:ls]
 skipbuild=true

@@ -37,7 +37,7 @@ The overall code is not intended to be DRY nor generic, it aims at providing eff
 ## 🧱 Installation
 
 ```bash
-python -m pip install pgeof2 
+python -m pip install pgeof 
 ```
 
 ### building from sources
@@ -60,7 +60,7 @@ python -m pip install .
 ## 🚀 Using Point Geometric Features
 
 👇 You may check out the provided `tests/test_pgeof.py` script to get started.
-using `help(pgeof2)` could be helpful.
+using `help(pgeof)` could be helpful.
 
 ⚠️ Please note that for some function the **neighbors are expected in CSR format**. 
 This allows expressing neighborhoods of varying sizes with dense arrays (eg the output of a 
@@ -68,14 +68,14 @@ radius search). Here are examples of how to easily convert typical k-NN or
 radius-NN neighborhoods to CSR format.
 
 ```python
-import pgeof2
+import pgeof
 import numpy as np
 
 # Generate a random synthetic point cloud and k-nearest neighbors
 num_points = 10000
 k = 20
 xyz = np.random.rand(num_points, 3).astype("float32")
-knn, _ = pgeof2.knn_search(xyz, xyz, k)
+knn, _ = pgeof.knn_search(xyz, xyz, k)
 
 # Converting k-nearest neighbors to CSR format
 nn_ptr = np.arange(num_points + 1) * k
@@ -87,14 +87,14 @@ nn = nn.astype("uint32")
 ```
 
 ```python
-import pgeof2
+import pgeof
 import numpy as np
 
 # Generate a random synthetic point cloud and k-nearest neighbors
 num_points = 10000
 radius = 0.1
 xyz = np.random.rand(num_points, 3).astype("float32")
-knn, _ = pgeof2.radius_search(xyz, xyz, radius, 50)
+knn, _ = pgeof.radius_search(xyz, xyz, radius, 50)
 
 # Converting radius neighbors to CSR format
 nn_ptr = np.r_[0, (knn >= 0).sum(axis=1).cumsum()]

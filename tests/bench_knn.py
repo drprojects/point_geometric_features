@@ -1,9 +1,8 @@
 import numpy as np
 import pytest
-from pgeof import pgeof
 from scipy.spatial import KDTree
 
-import pgeof2
+import pgeof
 
 
 @pytest.fixture
@@ -23,10 +22,10 @@ def test_knn_scipy(benchmark, random_point_cloud):
 
 
 @pytest.mark.benchmark(group="knn", disable_gc=True, warmup=True)
-def test_knn_pgeof2(benchmark, random_point_cloud):
+def test_knn_pgeof(benchmark, random_point_cloud):
     knn = 50
 
     def _to_bench():
-        _ = pgeof2.knn_search(random_point_cloud, random_point_cloud, knn)
+        _ = pgeof.knn_search(random_point_cloud, random_point_cloud, knn)
 
     benchmark(_to_bench)

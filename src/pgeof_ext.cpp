@@ -10,7 +10,7 @@
 namespace nb = nanobind;
 using namespace nb::literals;
 
-NB_MODULE(pgeof2_ext, m)
+NB_MODULE(pgeof_ext, m)
 {
     m.doc() =
         "Compute, for each point in a 3D point cloud, local geometric "
@@ -127,7 +127,7 @@ NB_MODULE(pgeof2_ext, m)
         "search_radius"_a, "knn"_a, "selected_features"_a, R"(
             Compute a selected set of geometric features for a point cloud via radius search.
 
-            This function aims to mimick the behavior of jakteristics and provide an efficent way
+            This function aims to mimick the behavior of jakteristics and provide an efficient way
             to compute a limited set of features (double precision version).
             
             :param xyz: the point cloud
@@ -142,7 +142,7 @@ NB_MODULE(pgeof2_ext, m)
         "search_radius"_a, "knn"_a, "selected_features"_a, R"(
             Compute a selected set of geometric features for a point cloud via radius search.
 
-            This function aims to mimick the behavior of jakteristics and provide an efficent way
+            This function aims to mimic the behavior of jakteristics and provide an efficient way
             to compute a limited set of features (float precision version).
             
             :param xyz: the point cloud

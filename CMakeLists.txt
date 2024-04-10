@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15...3.27)
-project(pgeof2)
+project(pgeof)
 find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -14,19 +14,20 @@ execute_process(
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
 find_package(nanobind CONFIG REQUIRED)
 
-nanobind_add_module(pgeof2_ext NOMINSIZE STABLE_ABI LTO src/pgeof2_ext.cpp)
+nanobind_add_module(pgeof_ext NOMINSIZE STABLE_ABI LTO src/pgeof_ext.cpp)
 
 # for nanobind 2
 # nanobind_add_stub(
-#   pgeof2_ext_stub
-#   MODULE pgeof2_ext
-#   OUTPUT pgeof2_ext.pyi
-#   PYTHON_PATH $<TARGET_FILE_DIR:pgeof2_ext>
-#   DEPENDS pgeof2_ext
+#   pgeof_ext_stub
+#   MODULE pgeof_ext
+#   OUTPUT pgeof_ext.pyi
+#   PYTHON_PATH $<TARGET_FILE_DIR:pgeof_ext>
+#   DEPENDS pgeof_ext
 # )
 
-# All lib are headeer only. it's facter to include like this than using exported targets 
+# All lib are headeer only. 
+# it's faster to include like this than using exported targets 
 # (i.e add_subdirectories(...))
-target_include_directories(pgeof2_ext PRIVATE "include" "third_party/eigen" "third_party/nanoflann/include" "third_party/taskflow") 
+target_include_directories(pgeof_ext PRIVATE "include" "third_party/eigen" "third_party/nanoflann/include" "third_party/taskflow") 
 
-install(TARGETS pgeof2_ext LIBRARY DESTINATION pgeof2)
+install(TARGETS pgeof_ext LIBRARY DESTINATION pgeof)

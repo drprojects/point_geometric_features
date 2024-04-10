@@ -1,4 +1,4 @@
-from .pgeof2_ext import (
+from .pgeof_ext import (
     EFeatureID,
     compute_features,
     compute_features_multiscale,
