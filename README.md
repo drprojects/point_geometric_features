@@ -67,7 +67,6 @@ This allows expressing neighborhoods of varying sizes with dense arrays (eg the 
 radius search). Here are examples of how to easily convert typical k-NN or 
 radius-NN neighborhoods to CSR format.
 
-
 ```python
 import pgeof2
 import numpy as np
@@ -81,6 +80,10 @@ knn, _ = pgeof2.knn_search(xyz, xyz, k)
 # Converting k-nearest neighbors to CSR format
 nn_ptr = np.arange(num_points + 1) * k
 nn = knn.flatten()
+
+# You may need to convert nn/nn_ptr to uint32 arrays
+nn_ptr = nn_ptr.astype("uint32")
+nn = nn.astype("uint32")
 ```
 
 ```python
@@ -93,24 +96,12 @@ radius = 0.1
 xyz = np.random.rand(num_points, 3).astype("float32")
 knn, _ = pgeof2.radius_search(xyz, xyz, radius, 50)
 
-def _sizes_to_ptrs(sizes):
-    zero = np.zeros(1, dtype="uint32")
-    return np.concatenate((zero, sizes)).cumsum(axis=0)
-
 # Converting radius neighbors to CSR format
-iota = np.arange(num_points).reshape(-1, 1)
-nn = np.concatenate((iota, knn), axis=1)
-k = nn.shape[1]
-n_missing = (nn < 0).sum(axis=1)
-if (n_missing > 0).any():
-    sizes = k - n_missing
-    nn = nn[nn >= 0]
-    nn_ptr = _sizes_to_ptrs(sizes)
-else:
-    nn = nn.flatten()
-    nn_ptr = np.arange(num_points + 1) * k
-nn = nn.astype("uint32") 
-nn_ptr = nn_ptr.astype("uint32") 
+nn_ptr = np.r_[0, (knn >= 0).sum(axis=1).cumsum()]
+nn = knn[knn >= 0]
+# You may need to convert nn/nn_ptr to uint32 arrays
+...
+
 ```
 
 ## 💳 Credits
