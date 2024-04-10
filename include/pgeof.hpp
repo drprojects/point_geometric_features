@@ -62,9 +62,9 @@ static inline void flush() { std::cout << std::endl; };
  * - volume
  * - curvature
  *
- * @param xyz the point cloud.
+ * @param xyz The point cloud.
  * @param nn Integer 1D array. Flattened neighbor indices. Make sure those are all positive,
- * '-1' indices will either crash or silently compute incorrect.
+ * '-1' indices will either crash or silently compute incorrect features.
  * @param nn_ptr: [n_points+1] Integer 1D array. Pointers wrt 'nn'. More specifically, the neighbors of point 'i'
  * are 'nn[nn_ptr[i]:nn_ptr[i + 1]]'.
  * @param k_min Minimum number of neighbors to consider for features computation. If a point has less,
@@ -84,7 +84,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
     const uint32_t* nn_data     = nn.data();
     const uint32_t* nn_ptr_data = nn_ptr.data();
 
-    real_t* features = (real_t*) calloc(n_points * feature_count, sizeof(real_t));
+    real_t*     features = (real_t*)calloc(n_points * feature_count, sizeof(real_t));
     nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
     tf::Executor executor;
@@ -104,7 +104,8 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
                 const PCAResult<real_t> pca = pca_from_neighborhood(xyz, nn_data, nn_ptr_data, i_point, k_nn);
                 compute_features(pca, &features[i_point * feature_count]);
             }
-        }, tf::StaticPartitioner(0));
+        },
+        tf::StaticPartitioner(0));
     executor.run(taskflow).get();
 
     // Final print to start on a new line
@@ -142,12 +143,12 @@ static bool check_scales(const std::vector<uint32_t>& k_scales)
  * - volume
  * - curvature
  *
- * @param xyz the point cloud
+ * @param xyz The point cloud
  * @param nn Integer 1D array. Flattened neighbor indices. Make sure those are all positive,
- *  '-1' indices will either crash or silently compute incorrect.
+ *  '-1' indices will either crash or silently compute incorrect features.
  * @param nn_ptr: [n_points+1] Integer 1D array. Pointers wrt 'nn'. More specifically, the neighbors of point 'i'
  *  are 'nn[nn_ptr[i]:nn_ptr[i + 1]]'.
- * @param k_scale Array of number of neighbors to consider for features computation. If a at a given scale, apoint has
+ * @param k_scale Array of number of neighbors to consider for features computation. If a at a given scale, a point has
  * less features will be a set of '0' values.
  * @param verbose Whether computation progress should be printed out
  * @return Geometric features associated with each point's neighborhood in a (num_points, features_count, n_scales)
@@ -162,14 +163,14 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any, feature_count>
     {
         throw std::invalid_argument("k_scales should be > 1 and sorted in ascending order");
     }
-    const size_t n_points = nn_ptr.size() - 1;  // number of points is not determined by xyz
-    const size_t n_scales = k_scales.size();
-    size_t       s_point  = 0;
+    const size_t    n_points    = nn_ptr.size() - 1;  // number of points is not determined by xyz
+    const size_t    n_scales    = k_scales.size();
+    size_t          s_point     = 0;
     const uint32_t* nn_data     = nn.data();
     const uint32_t* nn_ptr_data = nn_ptr.data();
-    
-    real_t* features = (real_t*) calloc(n_points * n_scales * feature_count, sizeof(real_t));
-    nb::capsule  owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
+
+    real_t*     features = (real_t*)calloc(n_points * n_scales * feature_count, sizeof(real_t));
+    nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
     // Each point can be treated in parallel
     tf::Executor executor;
@@ -193,7 +194,8 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any, feature_count>
                 const PCAResult<real_t> pca = pca_from_neighborhood(xyz, nn_data, nn_ptr_data, i_point, knn_scale);
                 compute_features(pca, &features[(i_point * n_scales + i_scale) * feature_count]);
             }
-        }, tf::StaticPartitioner(0));
+        },
+        tf::StaticPartitioner(0));
 
     executor.run(taskflow).get();
 
@@ -206,7 +208,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any, feature_count>
 }
 
 /**
- * Compute a set of geometric features for a point cloud using the optimal feature selection described in
+ * Compute a set of geometric features for a point cloud using the optimal neighborhood selection described in
  * http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf
  *
  *  * The following features are computed:
@@ -221,15 +223,15 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any, feature_count>
  * - curvature
  * - optimal_nn
  *
- * @param xyz the point cloud
+ * @param xyz The point cloud
  * @param nn Integer 1D array. Flattened neighbor indices. Make sure those are all positive,
- *  '-1' indices will either crash or silently compute incorrect.
+ *  '-1' indices will either crash or silently compute incorrect features.
  * @param nn_ptr: [n_points+1] Integer 1D array. Pointers wrt 'nn'. More specifically, the neighbors of point 'i'
  *  are 'nn[nn_ptr[i]:nn_ptr[i + 1]]'.
  * @param k_min Minimum number of neighbors to consider for features computation. If a point has less,
  * its features will be a set of '0' values.
  * @param k_step Step size to take when searching for the optimal neighborhood, size for each point following
- * Weinmann, 2105
+ * Weinmann, 2015
  * @param k_min_search Minimum neighborhood size at which to start when searching for the optimal neighborhood size for
  each point. It is advised to use a value of 10 or higher, for geometric features robustness.
  * @param verbose Whether computation progress should be printed out
@@ -247,7 +249,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
     const uint32_t* nn_data     = nn.data();
     const uint32_t* nn_ptr_data = nn_ptr.data();
 
-    real_t* features = (real_t*) calloc(n_points * feature_count, sizeof(real_t));
+    real_t*     features = (real_t*)calloc(n_points * feature_count, sizeof(real_t));
     nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
     tf::Executor executor;
@@ -275,8 +277,8 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
                     // and at the boundary values: k0 and k_nn
                     if ((k > k0) && (k % k_step != 0) && (k != k_nn)) { continue; }
 
-                    const PCAResult<real_t>   pca          = pca_from_neighborhood(xyz, nn_data, nn_ptr_data, i_point, k);
-                    const real_t eigenentropy = compute_eigentropy(pca);
+                    const PCAResult<real_t> pca          = pca_from_neighborhood(xyz, nn_data, nn_ptr_data, i_point, k);
+                    const real_t            eigenentropy = compute_eigentropy(pca);
                     // Keep track of the optimal neighborhood size with the
                     // lowest eigenentropy
                     if ((k == k0) || (eigenentropy < eigenentropy_optimal))
@@ -290,7 +292,8 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
                 // Add best nn
                 features[i_point * feature_count + 11] = real_t(k_optimal);
             }
-        }, tf::StaticPartitioner(0));
+        },
+        tf::StaticPartitioner(0));
 
     executor.run(taskflow).get();
 
@@ -306,7 +309,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
  * This function aims to mimic the behavior of jakteristics and provide an efficient way
  * to compute a limited set of features.
  *
- * @param xyz the point cloud
+ * @param xyz The point cloud
  * @param search_radius the search radius.
  * @param max_knn the maximum number of neighbors to fetch inside the radius. The central point is included. Fixing a
  * reasonable max number of neighbors prevents running OOM for large radius/dense point clouds.
@@ -325,7 +328,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>> compute_geome
     const size_t feature_count    = selected_features.size();
 
     const Eigen::Index n_points = xyz.rows();
-    real_t* features = (real_t*) calloc(n_points * feature_count, sizeof(real_t));
+    real_t*            features = (real_t*)calloc(n_points * feature_count, sizeof(real_t));
     std::fill(features, features + (n_points * feature_count), real_t(0.0));
     nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
@@ -356,7 +359,8 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>> compute_geome
                 const PCAResult<real_t>  pca   = pca_from_pointcloud(cloud);
                 compute_selected_features(pca, selected_features, &features[point_id * feature_count]);
             }
-        }, tf::StaticPartitioner(0));
+        },
+        tf::StaticPartitioner(0));
     executor.run(taskflow).get();
 
     const size_t shape[2] = {static_cast<size_t>(n_points), feature_count};

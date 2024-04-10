@@ -49,18 +49,46 @@ NB_MODULE(pgeof_ext, m)
             - curvature
             :param xyz: The point cloud.
             :param nn: Integer 1D array. Flattened neighbor indices. Make sure those are all positive,
-            '-1' indices will either crash or silently compute incorrect.
+            '-1' indices will either crash or silently compute incorrect features.
             :param nn_ptr: [n_points+1] Integer 1D array. Pointers wrt 'nn'. More specifically, the neighbors of point 'i'
             are 'nn[nn_ptr[i]:nn_ptr[i + 1]]'.
             :param k_min: Minimum number of neighbors to consider for features computation. If a point has less,
             its features will be a set of '0' values.
             :param verbose: Whether computation progress should be printed out
-            :return: the geometric features associated with each point's neighborhood in a tuple(num_points, features_count).
+            :return: the geometric features associated with each point's neighborhood in a (num_points, features_count) ndarray.
         )");
     m.def(
         "compute_features_multiscale", &pgeof::compute_geometric_features_multiscale<float>, "xyz"_a.noconvert(),
         "nn"_a.noconvert(), "nn_ptr"_a.noconvert(), "k_scales"_a, "verbose"_a = false, R"(
-            Compute a set of geometric features for a point cloud using the optimal feature selection described in
+            Compute a set of geometric features for a point cloud in a multiscale fashion.
+            
+            * The following features are computed:
+            - linearity
+            - planarity
+            - scattering
+            - verticality
+            - normal vector (oriented towards positive z-coordinates)
+            - length
+            - surface
+            - volume
+            - curvature
+            
+            :param xyz: The point cloud
+            :param nn: Integer 1D array. Flattened neighbor indices. Make sure those are all positive,
+            '-1' indices will either crash or silently compute incorrect features.
+            :param nn_ptr: [n_points+1] Integer 1D array. Pointers wrt 'nn'. More specifically, the neighbors of point 'i'
+            are 'nn[nn_ptr[i]:nn_ptr[i + 1]]'.
+            :param k_scale: Array of number of neighbors to consider for features computation. If a at a given scale, a point has
+            less features will be a set of '0' values.
+            :param verbose: Whether computation progress should be printed out
+            :return: Geometric features associated with each point's neighborhood in a (num_points, features_count, n_scales)
+            ndarray.
+        )");
+    m.def(
+        "compute_features_optimal", &pgeof::compute_geometric_features_optimal<float>, "xyz"_a.noconvert(),
+        "nn"_a.noconvert(), "nn_ptr"_a.noconvert(), "k_min"_a = 1, "k_step"_a = 1, "k_min_search"_a = 1,
+        "verbose"_a = false, R"(
+            Compute a set of geometric features for a point cloud using the optimal neighborhood selection described in
             http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf
 
             * The following features are computed:
@@ -76,22 +104,18 @@ NB_MODULE(pgeof_ext, m)
             - optimal_nn
             :param xyz: the point cloud
             :param nn: Integer 1D array. Flattened neighbor indices. Make sure those are all positive,
-            '-1' indices will either crash or silently compute incorrect.
+            '-1' indices will either crash or silently compute incorrect features.
             :param nn_ptr: [n_points+1] Integer 1D array. Pointers wrt 'nn'. More specifically, the neighbors of point 'i'
             are 'nn[nn_ptr[i]:nn_ptr[i + 1]]'.
             :param k_min: Minimum number of neighbors to consider for features computation. If a point has less,
             its features will be a set of '0' values.
             :param k_step: Step size to take when searching for the optimal neighborhood, size for each point following
-            Weinmann, 2105
+            Weinmann, 2015
             :param k_min_search: Minimum neighborhood size at which to start when searching for the optimal neighborhood size for
             each point. It is advised to use a value of 10 or higher, for geometric features robustness.
             :param verbose: Whether computation progress should be printed out
-            :return: Geometric features associated with each point's neighborhood in a tuple(num_points, features_count).
+            :return: Geometric features associated with each point's neighborhood in a (num_points, features_count) ndarray.
         )");
-    m.def(
-        "compute_features_optimal", &pgeof::compute_geometric_features_optimal<float>, "xyz"_a.noconvert(),
-        "nn"_a.noconvert(), "nn_ptr"_a.noconvert(), "k_min"_a = 1, "k_step"_a = 1, "k_min_search"_a = 1,
-        "verbose"_a = false);
     m.def("knn_search", &pgeof::nanoflann_knn_search<float>, "data"_a.noconvert(), "query"_a.noconvert(), "knn"_a, R"(
         Given two point clouds, compute for each point present in one of the point cloud 
         the N closest points in the other point cloud
@@ -135,7 +159,7 @@ NB_MODULE(pgeof_ext, m)
             :param max_knn: the maximum number of neighbors to fetch inside the sphere. The central point is included. Fixing a
             reasonable max number of neighbors prevents running OOM for large radius/dense point clouds.
             :param selected_features: List of selected features. See EFeatureID
-            :return: Geometric features associated with each point's neighborhood in a tuple(num_points, features_count)
+            :return: Geometric features associated with each point's neighborhood in a (num_points, features_count) ndarray.
         )");
     m.def(
         "compute_features_selected", &pgeof::compute_geometric_features_selected<float>, "xyz"_a.noconvert(),
@@ -150,6 +174,6 @@ NB_MODULE(pgeof_ext, m)
             :param max_knn: the maximum number of neighbors to fetch inside the sphere. The central point is included. Fixing a
             reasonable max number of neighbors prevents running OOM for large radius/dense point clouds.
             :param selected_features: List of selected features. See EFeatureID
-            :return: Geometric features associated with each point's neighborhood in a tuple(num_points, features_count)
+            :return: Geometric features associated with each point's neighborhood in a (num_points, features_count) ndarray.
         )");
 }
