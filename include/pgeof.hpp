@@ -1,274 +1,369 @@
-#include <cstdio>
-#include <cmath>
-#include <iostream>
-#include <vector>
-
-#ifdef PGEOF_WINDOWS
-    #include <ppl.h>
-#endif
-
-#include <eigen3/Eigen/Dense>
-#include <eigen3/Eigen/Eigenvalues>
-
 #pragma once
 
-namespace ei = Eigen;
+#include <nanobind/eigen/dense.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
 
-struct PCAOutput {
-    std::array<float, 3> val;
-    std::array<float, 3> v0;
-    std::array<float, 3> v1;
-    std::array<float, 3> v2;
-    float eigenentropy;
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <iostream>
+#include <limits>
+#include <taskflow/algorithm/for_each.hpp>
+#include <taskflow/taskflow.hpp>
+#include <vector>
+
+#include "pca.hpp"
+
+namespace nb = nanobind;
+
+namespace pgeof
+{
+
+namespace log
+{
+/**
+ * Log a progress into the std::cout. It has multiple quirks (std::cout usage, race condition)
+ * but it is mostly used for debugging purposes.
+ *
+ * @param progress_count a reference to the current count. it is incremented by one at each call of this function
+ * @param progress_total the total expected count of iteration
+ */
+static inline void progress(size_t& progress_count, const size_t progress_total)
+{
+    ++progress_count;
+    // Print progress
+    // NB: when in parallel progress_count behavior is undefined, but
+    // gives a good indication of progress
+    if (progress_count % 10000 == 0)
+    {
+        std::cout << progress_count << "% done          \r" << std::flush;
+        std::cout << std::ceil(progress_count * 100 / progress_total) << "% done          \r" << std::flush;
+    }
 };
-typedef ei::Matrix<float, 3, 3> Matrix3f;
-typedef ei::Matrix<float, 3, 1> Vector3f;
-typedef ei::Matrix<float, ei::Dynamic, 3> PointCloud;
 
-PCAOutput neighborhood_pca(
-    float *xyz, uint32_t *nn, const uint32_t *nn_ptr, std::size_t i_point,
-    std::size_t k_nn)
+/**
+ * flush the logger
+ */
+static inline void flush() { std::cout << std::endl; };
+}  // namespace log
+
+/**
+ * Compute a set of geometric features for a point cloud from a precomputed list of neighbors.
+ *
+ *  * The following features are computed:
+ * - linearity
+ * - planarity
+ * - scattering
+ * - verticality
+ * - normal vector (oriented towards positive z-coordinates)
+ * - length
+ * - surface
+ * - volume
+ * - curvature
+ *
+ * @param xyz The point cloud.
+ * @param nn Integer 1D array. Flattened neighbor indices. Make sure those are all positive,
+ * '-1' indices will either crash or silently compute incorrect features.
+ * @param nn_ptr: [n_points+1] Integer 1D array. Pointers wrt 'nn'. More specifically, the neighbors of point 'i'
+ * are 'nn[nn_ptr[i]:nn_ptr[i + 1]]'.
+ * @param k_min Minimum number of neighbors to consider for features computation. If a point has less,
+ * it features will be a set of '0' values.
+ * @param verbose Whether computation progress should be printed out
+ * @return the geometric features associated with each point's neighborhood in a (num_points, features_count) nd::array.
+ */
+template <typename real_t = float, const size_t feature_count = 11>
+static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute_geometric_features(
+    RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn, nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr,
+    const size_t k_min, const bool verbose)
 {
-    // Initialize the cloud (n_neighbors + 1, 3) matrix holding the
-    // points' neighbors XYZ coordinates
-    PointCloud cloud(k_nn, 3);
-
-    // Recover the neighbors' XYZ coordinates using nn and xyz
-    std::size_t idx_nei;
-    for (std::size_t i_nei = 0; i_nei < k_nn; i_nei++)
-    {
-        // Recover the neighbor's position in the xyz vector
-        idx_nei = nn[nn_ptr[i_point] + i_nei];
-
-        // Recover the corresponding xyz coordinates
-        cloud(i_nei, 0) = xyz[3 * idx_nei];
-        cloud(i_nei, 1) = xyz[3 * idx_nei + 1];
-        cloud(i_nei, 2) = xyz[3 * idx_nei + 2];
-    }
-
-    // Compute the (3, 3) covariance matrix
-    ei::MatrixXf centered_cloud = cloud.rowwise() - cloud.colwise().mean();
-    ei::Matrix3f cov =
-        (centered_cloud.adjoint() * centered_cloud) / float(k_nn);
-
-    // Compute the eigenvalues and eigenvectors of the covariance
-    ei::EigenSolver<Matrix3f> es(cov);
-
-    // Sort the values and vectors in order of increasing eigenvalue
-    std::vector<float> ev = {
-        es.eigenvalues()[0].real(),
-        es.eigenvalues()[1].real(),
-        es.eigenvalues()[2].real()};
-    std::array<std::size_t, 3> indices = {0, 1, 2};
-    std::sort(
-        std::begin(indices),
-        std::end(indices),
-        [&](std::size_t i1, std::size_t i2) { return ev[i1] > ev[i2]; } );
-    std::array<float,3> val = {
-        (std::max(ev[indices[0]],0.f)),
-        (std::max(ev[indices[1]],0.f)),
-        (std::max(ev[indices[2]],0.f))};
-    std::array<float,3> v0 = {
-        es.eigenvectors().col(indices[0])(0).real(),
-        es.eigenvectors().col(indices[0])(1).real(),
-        es.eigenvectors().col(indices[0])(2).real()};
-    std::array<float,3>  v1 = {
-        es.eigenvectors().col(indices[1])(0).real(),
-        es.eigenvectors().col(indices[1])(1).real(),
-        es.eigenvectors().col(indices[1])(2).real()};
-    std::array<float,3>  v2 = {
-        es.eigenvectors().col(indices[2])(0).real(),
-        es.eigenvectors().col(indices[2])(1).real(),
-        es.eigenvectors().col(indices[2])(2).real()};
-
-    // To standardize the orientation of eigenvectors, we choose to
-    // enforce all eigenvectors to be expressed in the Z+ half-space
-    if (v0[2] < 0)
-    {
-        v0[0] = -v0[0];
-        v0[1] = -v0[1];
-        v0[2] = -v0[2];
-    }
-
-    if (v1[2] < 0)
-    {
-        v1[0] = -v1[0];
-        v1[1] = -v1[1];
-        v1[2] = -v1[2];
-    }
-
-    if (v2[2] < 0)
-    {
-        v2[0] = -v2[0];
-        v2[1] = -v2[1];
-        v2[2] = -v2[2];
-    }
-
-    // Compute the eigenentropy as defined in:
-    // http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf
-    const float epsilon = 0.001f;
-    const float val_sum = val[0] + val[1] + val[2] + epsilon;
-    const float e0 = val[0] / val_sum;
-    const float e1 = val[1] / val_sum;
-    const float e2 = val[2] / val_sum;
-    const float eigenentropy = - e0 * std::log(e0 + epsilon) - e1 * std::log(e1 + epsilon)
-        - e2 * std::log(e2 + epsilon);
-
-    return {val, v0, v1, v2, eigenentropy};
-}
-
-
-void compute_geometric_features(
-    float *xyz, uint32_t *nn, const uint32_t *nn_ptr, int n_points,
-    float *features, int k_min, int k_step, int k_min_search, bool verbose)
-{
+    if (k_min < 1) { throw std::invalid_argument("k_min should be > 1"); }
     // Each point can be treated in parallel
-    std::size_t s_point = 0;
+    const size_t    n_points    = nn_ptr.size() - 1;  // number of points is not determined by xyz
+    size_t          s_point     = 0;
+    const uint32_t* nn_data     = nn.data();
+    const uint32_t* nn_ptr_data = nn_ptr.data();
 
-    #ifdef PGEOF_WINDOWS
-    concurrency::parallel_for(std::size_t(0), std::size_t(n_points), [&](std::size_t i_point)
-    #else
-    #pragma omp parallel for schedule(static)
-    for (std::size_t i_point = 0; i_point < n_points; i_point++)
-    #endif
-    {
-        // Recover the points' total number of neighbors
-        const std::size_t k_nn = nn_ptr[i_point + 1] - nn_ptr[i_point];
+    real_t*     features = (real_t*)calloc(n_points * feature_count, sizeof(real_t));
+    nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
-        // If the cloud has only one point, populate the final feature
-        // vector with zeros and continue
-        if (k_nn < k_min ||  k_nn <= 0)
+    tf::Executor executor;
+    tf::Taskflow taskflow;
+    taskflow.for_each_index(
+        size_t(0), size_t(n_points), size_t(1),
+        [&](size_t i_point)
         {
-            features[i_point * 12 + 0]  = 0.f;
-            features[i_point * 12 + 1]  = 0.f;
-            features[i_point * 12 + 2]  = 0.f;
-            features[i_point * 12 + 3]  = 0.f;
-            features[i_point * 12 + 4]  = 0.f;
-            features[i_point * 12 + 5]  = 0.f;
-            features[i_point * 12 + 6]  = 0.f;
-            features[i_point * 12 + 7]  = 0.f;
-            features[i_point * 12 + 8]  = 0.f;
-            features[i_point * 12 + 9]  = 0.f;
-            features[i_point * 12 + 10] = 0.f;
-            features[i_point * 12 + 11] = 0.f;
-            s_point++;
-            #ifdef PGEOF_WINDOWS
-            return;
-            #else
-            continue;
-            #endif
-        }
+            if (verbose) log::progress(s_point, n_points);
 
-        // Compute the PCA for neighborhoods of increasing sizes. The
-        // neighborhood size with the lowest eigenentropy will be kept.
-        // Do not search optimal neighborhood size if k_step < 1
-        PCAOutput pca;
-        std::size_t k_optimal =  k_nn;
-        if (k_step < 1)
-        {
-            pca = neighborhood_pca(xyz, nn, nn_ptr, i_point, k_nn);
-        }
-        else
-        {
-            // We do not want to search too-small neighborhoods, since
-            // their eigenentropy is likely to be small despite having
-            // unreliable or noisy geometric features. Hence, we start
-            // searching at k_min_search
-            std::size_t k0 = std::min(std::max(k_min, k_min_search), int(k_nn));
+            // Recover the points' total number of neighbors
+            const size_t k_nn = static_cast<size_t>(nn_ptr_data[i_point + 1] - nn_ptr_data[i_point]);
 
-            for (std::size_t k = k0; k < k_nn + 1; ++k)
+            // If the cloud has less than k_min point, continue
+            if (k_nn >= k_min)
             {
-                // Only evaluate the neighborhood's PCA every 'k_step'
-                // and at the boundary values: k0 and k_nn
-                if ((k > k0) && (k % k_step != 0) && (k != k_nn))
-                {
-                    continue;
-                }
-
-                // Actual PCA computation on the k-neighborhood
-                const PCAOutput pca_k = neighborhood_pca(xyz, nn, nn_ptr, i_point, k);
-
-                // Keep track of the optimal neighborhood size with the
-                // lowest eigenentropy
-                if ((k == k0) || (pca_k.eigenentropy < pca.eigenentropy))
-                {
-                    pca = pca_k;
-                    k_optimal = k;
-                    continue;
-                }
+                const PCAResult<real_t> pca = pca_from_neighborhood(xyz, nn_data, nn_ptr_data, i_point, k_nn);
+                compute_features(pca, &features[i_point * feature_count]);
             }
-        }
-
-        // Recover the eigenvalues and eigenvectors from the PCA
-        const std::array<float, 3> & val = pca.val;
-        const std::array<float, 3> & v0 = pca.v0;
-        const std::array<float, 3> & v1 = pca.v1;
-        const std::array<float, 3> & v2 = pca.v2;
-
-        // Compute the dimensionality features. The 1e-3 term is meant
-        // to stabilize the division when the cloud's 3rd eigenvalue is
-        // near 0 (points lie in 1D or 2D). Note we take the sqrt of the
-        // eigenvalues since the PCA eigenvaluess are homogeneous to m²
-        const float val0       = std::sqrt(val[0]);
-        const float val1       = std::sqrt(val[1]);
-        const float val2       = std::sqrt(val[2]);
-        const float linearity  = (val0 - val1) / (val0 + 1e-3f);
-        const float planarity  = (val1 - val2) / (val0 + 1e-3f);
-        const float scattering = val2 / (val0 + 1e-3f);
-        const float length     = val0;
-        const float surface    = std::sqrt(val0 * val1 + 1e-6f);
-        const float volume     = std::pow(val0 * val1 * val2 + 1e-9f, 1.f / 3.f);
-        const float curvature  = val2 / (val0 + val1 + val2 + 1e-3f);
-
-        // Compute the verticality. NB we account for the edge case
-        // where all features are 0
-        float verticality = 0.f;
-        if (val0 > 0)
-        {
-            const std::array<float,3> unary_vector = {
-                val[0] * std::abs(v0[0]) + val[1] * std::abs(v1[0]) + val[2] * std::abs(v2[0]),
-                val[0] * std::abs(v0[1]) + val[1] * std::abs(v1[1]) + val[2] * std::abs(v2[1]),
-                val[0] * std::abs(v0[2]) + val[1] * std::abs(v1[2]) + val[2] * std::abs(v2[2])};
-            const float norm = std::sqrt(
-                unary_vector[0] * unary_vector[0]
-                + unary_vector[1] * unary_vector[1]
-                + unary_vector[2] * unary_vector[2]);
-            verticality = unary_vector[2] / norm;
-        }
-
-        // Populate the final feature vector
-        features[i_point * 12 + 0]  = linearity;
-        features[i_point * 12 + 1]  = planarity;
-        features[i_point * 12 + 2]  = scattering;
-        features[i_point * 12 + 3]  = verticality;
-        features[i_point * 12 + 4]  = v2[0];
-        features[i_point * 12 + 5]  = v2[1];
-        features[i_point * 12 + 6]  = v2[2];
-        features[i_point * 12 + 7]  = length;
-        features[i_point * 12 + 8]  = surface;
-        features[i_point * 12 + 9]  = volume;
-        features[i_point * 12 + 10] = curvature;
-        features[i_point * 12 + 11] = float(k_optimal);
-
-        // Print progress
-        // NB: when in parallel s_point behavior is undefined, but gives
-        // a good indication of progress
-        s_point++;
-        if (verbose && s_point % 10000 == 0)
-        {
-            std::cout << s_point << "% done          \r" << std::flush;
-            std::cout << ceil(s_point * 100 / n_points) << "% done          \r" << std::flush;
-        }
-    }
-    #ifdef PGEOF_WINDOWS
-    );
-    #endif
+        },
+        tf::StaticPartitioner(0));
+    executor.run(taskflow).get();
 
     // Final print to start on a new line
-    if (verbose)
-    {
-        std::cout << std::endl;
-    }
-
-    return;
+    if (verbose) log::flush();
+    const size_t shape[2] = {n_points, feature_count};
+    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>>(features, 2, shape, owner_features);
 }
+/**
+ * Convenience function that check that scales are well ordered in increasing order.
+ *
+ * @param k_scales the list of scale size (number of neighbors).
+ */
+static bool check_scales(const std::vector<uint32_t>& k_scales)
+{
+    uint32_t previous_scale = 1;  // minimal admissible k_min value is 1
+    for (const auto& current_scale : k_scales)
+    {
+        if (current_scale < previous_scale) { return false; }
+        previous_scale = current_scale;
+    }
+    return true;
+}
+
+/**
+ * Compute a set of geometric features for a point cloud in a multiscale fashion.
+ *
+ * The following features are computed:
+ * - linearity
+ * - planarity
+ * - scattering
+ * - verticality
+ * - normal vector (oriented towards positive z-coordinates)
+ * - length
+ * - surface
+ * - volume
+ * - curvature
+ *
+ * @param xyz The point cloud
+ * @param nn Integer 1D array. Flattened neighbor indices. Make sure those are all positive,
+ *  '-1' indices will either crash or silently compute incorrect features.
+ * @param nn_ptr: [n_points+1] Integer 1D array. Pointers wrt 'nn'. More specifically, the neighbors of point 'i'
+ *  are 'nn[nn_ptr[i]:nn_ptr[i + 1]]'.
+ * @param k_scale Array of number of neighbors to consider for features computation. If a at a given scale, a point has
+ * less features will be a set of '0' values.
+ * @param verbose Whether computation progress should be printed out
+ * @return Geometric features associated with each point's neighborhood in a (num_points, features_count, n_scales)
+ * nd::array
+ */
+template <typename real_t, const size_t feature_count = 11>
+static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any, feature_count>> compute_geometric_features_multiscale(
+    RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn, nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr,
+    const std::vector<uint32_t>& k_scales, const bool verbose)
+{
+    if (!check_scales(k_scales))
+    {
+        throw std::invalid_argument("k_scales should be > 1 and sorted in ascending order");
+    }
+    const size_t    n_points    = nn_ptr.size() - 1;  // number of points is not determined by xyz
+    const size_t    n_scales    = k_scales.size();
+    size_t          s_point     = 0;
+    const uint32_t* nn_data     = nn.data();
+    const uint32_t* nn_ptr_data = nn_ptr.data();
+
+    real_t*     features = (real_t*)calloc(n_points * n_scales * feature_count, sizeof(real_t));
+    nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
+
+    // Each point can be treated in parallel
+    tf::Executor executor;
+    tf::Taskflow taskflow;
+    taskflow.for_each_index(
+        size_t(0), size_t(n_points), size_t(1),
+        [&](size_t i_point)
+        {
+            if (verbose) log::progress(s_point, n_points);
+            // Recover the points' total number of neighbors
+            const size_t k_nn = static_cast<size_t>(nn_ptr_data[i_point + 1] - nn_ptr_data[i_point]);
+
+            for (size_t i_scale = 0; i_scale < n_scales; ++i_scale)
+            {
+                const size_t knn_scale = static_cast<size_t>(k_scales[i_scale]);
+
+                if (k_nn < knn_scale)
+                    break;  // we assume scales are stored in increasing order,
+                            // so we could do an early break in case of k_nn <
+                            // knn_scale
+                const PCAResult<real_t> pca = pca_from_neighborhood(xyz, nn_data, nn_ptr_data, i_point, knn_scale);
+                compute_features(pca, &features[(i_point * n_scales + i_scale) * feature_count]);
+            }
+        },
+        tf::StaticPartitioner(0));
+
+    executor.run(taskflow).get();
+
+    // Final print to start on a new line
+    if (verbose) log::flush();
+
+    const size_t shape[3] = {n_points, n_scales, feature_count};
+    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any, feature_count>>(
+        features, 3, shape, owner_features);
+}
+
+/**
+ * Compute a set of geometric features for a point cloud using the optimal neighborhood selection described in
+ * http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf
+ *
+ *  * The following features are computed:
+ * - linearity
+ * - planarity
+ * - scattering
+ * - verticality
+ * - normal vector (oriented towards positive z-coordinates)
+ * - length
+ * - surface
+ * - volume
+ * - curvature
+ * - optimal_nn
+ *
+ * @param xyz The point cloud
+ * @param nn Integer 1D array. Flattened neighbor indices. Make sure those are all positive,
+ *  '-1' indices will either crash or silently compute incorrect features.
+ * @param nn_ptr: [n_points+1] Integer 1D array. Pointers wrt 'nn'. More specifically, the neighbors of point 'i'
+ *  are 'nn[nn_ptr[i]:nn_ptr[i + 1]]'.
+ * @param k_min Minimum number of neighbors to consider for features computation. If a point has less,
+ * its features will be a set of '0' values.
+ * @param k_step Step size to take when searching for the optimal neighborhood, size for each point following
+ * Weinmann, 2015
+ * @param k_min_search Minimum neighborhood size at which to start when searching for the optimal neighborhood size for
+ each point. It is advised to use a value of 10 or higher, for geometric features robustness.
+ * @param verbose Whether computation progress should be printed out
+ * @return Geometric features associated with each point's neighborhood in a (num_points, features_count) nd::array
+ */
+template <typename real_t, const size_t feature_count = 12>
+static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute_geometric_features_optimal(
+    RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn, nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr,
+    const uint32_t k_min, const uint32_t k_step, const uint32_t k_min_search, const bool verbose)
+{
+    if (k_min < 1 && k_min_search < 1) { throw std::invalid_argument("k_min and k_min_search should be > 1"); }
+    // Each point can be treated in parallel
+    const size_t    n_points    = nn_ptr.size() - 1;  // number of points is not determined by xyz
+    size_t          s_point     = 0;
+    const uint32_t* nn_data     = nn.data();
+    const uint32_t* nn_ptr_data = nn_ptr.data();
+
+    real_t*     features = (real_t*)calloc(n_points * feature_count, sizeof(real_t));
+    nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
+
+    tf::Executor executor;
+    tf::Taskflow taskflow;
+    taskflow.for_each_index(
+        size_t(0), size_t(n_points), size_t(1),
+        [&](size_t i_point)
+        {
+            if (verbose) log::progress(s_point, n_points);
+
+            // Recover the points' total number of neighbors
+            const size_t k_nn = static_cast<size_t>(nn_ptr_data[i_point + 1] - nn_ptr_data[i_point]);
+
+            // Process only if the cloud has the required number of point
+            if (k_nn >= k_min && k_nn >= k_min_search)
+            {
+                size_t k0 = std::min(std::max(static_cast<size_t>(k_min), static_cast<size_t>(k_min_search)), k_nn);
+
+                PCAResult<real_t> pca_optimal;
+                real_t            eigenentropy_optimal = real_t(1.0);
+                size_t            k_optimal            = k_nn;
+                for (size_t k = k0; k <= k_nn; ++k)
+                {
+                    // Only evaluate the neighborhood's PCA every 'k_step'
+                    // and at the boundary values: k0 and k_nn
+                    if ((k > k0) && (k % k_step != 0) && (k != k_nn)) { continue; }
+
+                    const PCAResult<real_t> pca          = pca_from_neighborhood(xyz, nn_data, nn_ptr_data, i_point, k);
+                    const real_t            eigenentropy = compute_eigentropy(pca);
+                    // Keep track of the optimal neighborhood size with the
+                    // lowest eigenentropy
+                    if ((k == k0) || (eigenentropy < eigenentropy_optimal))
+                    {
+                        eigenentropy_optimal = eigenentropy;
+                        k_optimal            = k;
+                        pca_optimal          = pca;
+                    }
+                }
+                compute_features(pca_optimal, &features[i_point * feature_count]);
+                // Add best nn
+                features[i_point * feature_count + 11] = real_t(k_optimal);
+            }
+        },
+        tf::StaticPartitioner(0));
+
+    executor.run(taskflow).get();
+
+    if (verbose) log::flush();
+
+    const size_t shape[2] = {n_points, feature_count};
+    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>>(features, 2, shape, owner_features);
+}
+
+/**
+ * Compute a selected set of geometric features for a point cloud via radius search.
+ *
+ * This function aims to mimic the behavior of jakteristics and provide an efficient way
+ * to compute a limited set of features.
+ *
+ * @param xyz The point cloud
+ * @param search_radius the search radius.
+ * @param max_knn the maximum number of neighbors to fetch inside the radius. The central point is included. Fixing a
+ * reasonable max number of neighbors prevents running OOM for large radius/dense point clouds.
+ * @param selected_features the list of selected features. See pgeof::EFeatureID
+ * @return Geometric features associated with each point's neighborhood in a (num_points, features_count) nd::array
+ */
+template <typename real_t>
+static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>> compute_geometric_features_selected(
+    RefCloud<real_t> xyz, const real_t search_radius, const uint32_t max_knn,
+    const std::vector<EFeatureID>& selected_features)
+{
+    using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2>;
+    // TODO: where knn < num of points
+    kd_tree_t    kd_tree(3, xyz, 10);
+    const real_t sq_search_radius = search_radius * search_radius;
+    const size_t feature_count    = selected_features.size();
+
+    const Eigen::Index n_points = xyz.rows();
+    real_t*            features = (real_t*)calloc(n_points * feature_count, sizeof(real_t));
+    std::fill(features, features + (n_points * feature_count), real_t(0.0));
+    nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
+
+    tf::Executor executor;
+    tf::Taskflow taskflow;
+    taskflow.for_each_index(
+        Eigen::Index(0), n_points, Eigen::Index(1),
+        [&](Eigen::Index point_id)
+        {
+            nanoflann::RKNNResultSet<real_t, int32_t, uint32_t> result_set(max_knn, sq_search_radius);
+
+            std::vector<int32_t> indices(max_knn, -1);  // TODO: maybe int64
+            std::vector<real_t>  sqr_dist(max_knn, real_t(0.0));
+
+            result_set.init(&indices[0], &sqr_dist[0]);
+            kd_tree.index_->findNeighbors(result_set, xyz.row(point_id).data());
+
+            std::vector<int32_t> final_indices;
+            for (size_t i = 0; i < max_knn; ++i)
+            {
+                if (indices[i] == -1) { break; }
+                final_indices.push_back(indices[i]);
+            }
+
+            if (final_indices.size() > 2)
+            {
+                const PointCloud<real_t> cloud = xyz(final_indices, Eigen::all);
+                const PCAResult<real_t>  pca   = pca_from_pointcloud(cloud);
+                compute_selected_features(pca, selected_features, &features[point_id * feature_count]);
+            }
+        },
+        tf::StaticPartitioner(0));
+    executor.run(taskflow).get();
+
+    const size_t shape[2] = {static_cast<size_t>(n_points), feature_count};
+    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>>(features, 2, shape, owner_features);
+}
+}  // namespace pgeof

@@ -1,10 +1,10 @@
 [build-system]
-requires = ["wheel", "setuptools", "oldest-supported-numpy"]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core >=0.4.3", "nanobind >= 1.9.2"]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "pgeof"
-version = "0.0.2"
+version = "0.1.0"
 readme = "README.md"
 description = "Compute the geometric features associated with each point's neighborhood:"
 requires-python = ">=3.8,<3.13"
@@ -19,14 +19,56 @@ classifiers = [
   "Programming Language :: Python",
   "Topic :: Scientific/Engineering"
 ]
-
 dependencies = [
-    "numpy"
+  "numpy >= 1.7, < 2"
 ]
 
 [project.urls]
 homepage = "https://github.com/drprojects/point_geometric_features"
 repository = "https://github.com/drprojects/point_geometric_features"
 
+[tool.scikit-build]
+# Protect the configuration against future changes in scikit-build-core
+minimum-version = "0.4"
+
+# Setuptools-style build caching in a local directory
+build-dir = "build/{wheel_tag}"
+
+cmake.build-type = "Release"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+
+[gh-actions]
+python =
+    3.9: py39
+    3.10: py310
+    3.11: py311
+    3.12: py312
+
+[testenv]
+deps =
+  pytest >= 7.4
+  pytest-benchmark ~= 4.0
+  numpy >= 1.7, < 2
+  scipy
+  jakteristics;platform_system=="Windows" or platform_system=="Linux" 
+commands = pytest --basetemp="{envtmpdir}" {posargs}
+
+[testenv:bench]
+# globs/wildcards do not work with tox
+commands = pytest --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/bench_jakteristics.py} 
+
+[testenv:ls]
+skipbuild=true
+commands = ls {envtmpdir}
+"""
+
 [tool.cibuildwheel]
-build = "cp3{8,9,10,11,12}-*"
+build = "cp3{9,10,11,12}-*"
+archs = ["auto64"] # limit to 64bits builds
+
+# Needed for full C++17 support
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.14"

@@ -15,21 +15,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, windows-2019]
+        os: [ubuntu-22.04, windows-2022, macos-12]
+      fail-fast: false
 
-    env:
-      CIBW_ENVIRONMENT:  ${{ matrix.os == 'windows-2019' && 'EIGEN_LIB_PATH=.' || 'EIGEN_LIB_PATH=/project' }}
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/checkout@v4
         with:
-          repository: eigen-mirror/eigen
-          ref: "3.4.0"
-          path: eigen3
-
+          submodules: True
+        
       # Used to host cibuildwheel
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
 
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel==2.15
@@ -49,9 +44,11 @@ jobs:
     # Only publish to PyPI when a commit is tagged
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: True
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
 
       - uses: actions/download-artifact@v3
         with:
