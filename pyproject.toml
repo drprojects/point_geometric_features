@@ -19,6 +19,9 @@ classifiers = [
   "Programming Language :: Python",
   "Topic :: Scientific/Engineering"
 ]
+dependencies = [
+  "numpy >= 1.7, < 2"
+]
 
 [project.urls]
 homepage = "https://github.com/drprojects/point_geometric_features"
@@ -48,7 +51,7 @@ python =
 deps =
   pytest >= 7.4
   pytest-benchmark ~= 4.0
-  numpy >= 1.7
+  numpy >= 1.7, < 2
   scipy
   jakteristics;platform_system=="Windows" or platform_system=="Linux" 
 commands = pytest --basetemp="{envtmpdir}" {posargs}
@@ -60,7 +63,6 @@ commands = pytest --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/ben
 [testenv:ls]
 skipbuild=true
 commands = ls {envtmpdir}
-
 """
 
 [tool.cibuildwheel]
