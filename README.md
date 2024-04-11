@@ -40,13 +40,19 @@ The overall code is not intended to be DRY nor generic, it aims at providing eff
 python -m pip install pgeof 
 ```
 
+or 
+
+```bash
+python -m pip install git+https://github.com/drprojects/point_geometric_features
+```
+
 ### building from sources
 
-Pgeof depends on [Eigen library](https://eigen.tuxfamily.org/), [Taskflow](https://github.com/taskflow/taskflow), 
+pgeof depends on [Eigen library](https://eigen.tuxfamily.org/), [Taskflow](https://github.com/taskflow/taskflow), 
 [nanoflann](https://github.com/jlblancoc/nanoflann) and [nanobind](https://github.com/wjakob/nanobind).
 
 
-Pgeof adhere to [PEP 517](https://peps.python.org/pep-0517/) and use [scikit-build-core](https://github.com/scikit-build/scikit-build-core) as build backend. Build dependencies (nanobind, scikit-build-core...) are fetched at build time. C++ third party libraries are embedded as submodules.
+pgeof adhere to [PEP 517](https://peps.python.org/pep-0517/) and use [scikit-build-core](https://github.com/scikit-build/scikit-build-core) as build backend. Build dependencies (nanobind, scikit-build-core...) are fetched at build time. C++ third party libraries are embedded as submodules.
 
 
 ```bash
@@ -59,13 +65,52 @@ python -m pip install .
 
 ## 🚀 Using Point Geometric Features
 
-👇 You may check out the provided `tests/test_pgeof.py` script to get started.
-using `help(pgeof)` could be helpful.
+Here we summarize the very basics of `pgeof` usage. 
+Users are invited to use `help(pgeof)` for further details on parameters.
 
-⚠️ Please note that for some function the **neighbors are expected in CSR format**. 
+At its core `pgeof` provides three functions to compute a set of features given a 3D point cloud and
+some precomputed neighborhoods.
+
+```python
+import pgeof
+
+# Compute a set of 11 predefined features per points.
+pgeof.compute_features(
+    xyz, # The point cloud. A numpy array of shape (n, 3).
+    nn, # CSR data structure see below.
+    nn_ptr, # CSR data structure see below.
+    k_min = 1 # Minimum number of neighbors to consider for features computation. 
+    verbose = false # Basic verbose output, for debug purposes.
+)
+```
+
+```python
+# Sequence of n scales feature computation.
+pgeof.compute_features_multiscale(
+    ...
+    k_scale # array of neighborhood size
+)
+```
+
+```python
+# Feature computation with optimal neighborhood selection as exposed in Weinmann et al., 2015. 
+# return a set of 12 features per points (11 + the optimal neighborhood size)
+pgeof.compute_features_optimal(
+    ...
+    k_min = 1, # Minimum number of neighbors to consider for features computation.
+    k_step = 1, # Step size to take when searching for the optimal neighborhood
+    k_min_search = 1, # Minimum neighborhood size at which to start when searching for the optimal neighborhood size for each point. it should be >= to k_min parameter.
+)
+```
+
+⚠️ Please note that for theses three functions the **neighbors are expected in CSR format**. 
 This allows expressing neighborhoods of varying sizes with dense arrays (eg the output of a 
-radius search). Here are examples of how to easily convert typical k-NN or 
-radius-NN neighborhoods to CSR format.
+radius search).
+
+We provide very tiny and specialized k-NN / radius-NN search routines. 
+They rely on `nanoflann` C++ library and they should be faster and lighter than `scipy` and `sklearn` alternatives.
+
+Here are some examples of how to easily compute and convert typical k-NN or radius-NN neighborhoods to CSR format (`nn` and `nn_ptr` are two flat `uint32` arrays):
 
 ```python
 import pgeof
@@ -84,6 +129,8 @@ nn = knn.flatten()
 # You may need to convert nn/nn_ptr to uint32 arrays
 nn_ptr = nn_ptr.astype("uint32")
 nn = nn.astype("uint32")
+
+features = pgeof.compute_features(xyz, nn, nn_ptr)
 ```
 
 ```python
@@ -92,17 +139,46 @@ import numpy as np
 
 # Generate a random synthetic point cloud and k-nearest neighbors
 num_points = 10000
-radius = 0.1
+radius = 0.2
+k = 20
 xyz = np.random.rand(num_points, 3).astype("float32")
-knn, _ = pgeof.radius_search(xyz, xyz, radius, 50)
+knn, _ = pgeof.radius_search(xyz, xyz, radius, k)
 
 # Converting radius neighbors to CSR format
 nn_ptr = np.r_[0, (knn >= 0).sum(axis=1).cumsum()]
 nn = knn[knn >= 0]
 # You may need to convert nn/nn_ptr to uint32 arrays
 ...
-
 ```
+
+At last and as a by product we also provide a function to compute a subset of features on the fly. 
+it is inspired by the `Jakteristics` python package (while being less complete but faster).
+the list of feature to compute is given as an array of `EFeatureID`
+
+```python
+import pgeof
+from pgeof import EFeatureID
+import numpy as np
+
+# Generate a random synthetic point cloud and k-nearest neighbors
+num_points = 10000
+radius = 0.2
+k = 20
+xyz = np.random.rand(num_points, 3)
+features = pgeof.compute_features_selected(xyz, radius, k, [EFeatureID.Verticality])
+```
+
+## Known limitations
+
+Some functions only accept `float` scalar types and `uint32` index types and we avoid implicit cast / conversions.
+This could be a limitation in some situations (`double` coordinates point clouds or need for a big indices).
+Some C++ function could be templated / to accept other type without conversion. For now, this feature is not enabled everywhere to reduce compilation time or enhance code readability but please let us know if you need this feature !
+
+Normal are forced to be oriented in the Z half space. 
+
+## Testing
+
+Some basic tests and benchmarks are provided in the tests directory. Test could be run in a clean and reproducible environments via `tox` (`tox run` and `tox run -e bench`).
 
 ## 💳 Credits
 This implementation was largely inspired from [Superpoint Graph](https://github.com/loicland/superpoint_graph). The main modifications here allow: 
