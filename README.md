@@ -12,10 +12,11 @@
 
 ## 📌 Description
 
-Python wrapper around C++ helper to compute, for each point in a 3D point cloud, local geometric features in parallel on CPU:
+The `pgeof` library provides utilities for fast, parallelized computing ⚡ of **local geometric 
+features for 3D point clouds** ☁️ **on CPU** .
 
 <details>
-<summary><b>️List of computed features️</b></summary>
+<summary><b>️List of available features ️👇</b></summary>
 
 - linearity
 - planarity
@@ -31,10 +32,18 @@ Python wrapper around C++ helper to compute, for each point in a 3D point cloud,
 - optimal neighborhood size
 </details>
 
-The wrapper allows to compute feature in multiple fashions (on the fly subset of features _a la_ jakteristics, an array of features or multiscale features...). Moreover, it offers basic interfaces to compute fast K-NN or Radius search on point clouds. 
-The overall code is not intended to be DRY nor generic, it aims at providing efficient as possible implementations for some limited scopes and usages.
+`pgeof` allows computing features in multiple fashions: **on-the-fly subset of features** 
+_a la_ [jakteristics](https://jakteristics.readthedocs.io), **array of features**, or 
+**multiscale features**. Moreover, `pgeof` also offers functions for fast **K-NN** or 
+**radius-NN** searches 🔍. 
+
+Behind the scenes, the library is a Python wrapper around C++ utilities.
+The overall code is not intended to be DRY nor generic, it aims at providing efficient as 
+possible implementations for some limited scopes and usages.
 
 ## 🧱 Installation
+
+### From binaries
 
 ```bash
 python -m pip install pgeof 
@@ -46,20 +55,20 @@ or
 python -m pip install git+https://github.com/drprojects/point_geometric_features
 ```
 
-### building from sources
+### Building from sources
 
-pgeof depends on [Eigen library](https://eigen.tuxfamily.org/), [Taskflow](https://github.com/taskflow/taskflow), 
-[nanoflann](https://github.com/jlblancoc/nanoflann) and [nanobind](https://github.com/wjakob/nanobind).
-
-
-pgeof adhere to [PEP 517](https://peps.python.org/pep-0517/) and use [scikit-build-core](https://github.com/scikit-build/scikit-build-core) as build backend. Build dependencies (nanobind, scikit-build-core...) are fetched at build time. C++ third party libraries are embedded as submodules.
+`pgeof` depends on [Eigen library](https://eigen.tuxfamily.org/), [Taskflow](https://github.com/taskflow/taskflow), [nanoflann](https://github.com/jlblancoc/nanoflann) and [nanobind](https://github.com/wjakob/nanobind).
+The library adheres to [PEP 517](https://peps.python.org/pep-0517/) and uses [scikit-build-core](https://github.com/scikit-build/scikit-build-core) as build backend. 
+Build dependencies (`nanobind`, `scikit-build-core`, ...) are fetched at build time.
+C++ third party libraries are embedded as submodules.
 
 
 ```bash
-# clone project
+# Clone project
 git clone --recurse-submodules https://github.com/drprojects/point_geometric_features.git
 cd point_geometric_features
-# build and install the package
+
+# Build and install the package
 python -m pip install .
 ```
 
@@ -74,18 +83,18 @@ some precomputed neighborhoods.
 ```python
 import pgeof
 
-# Compute a set of 11 predefined features per points.
+# Compute a set of 11 predefined features per points
 pgeof.compute_features(
-    xyz, # The point cloud. A numpy array of shape (n, 3).
-    nn, # CSR data structure see below.
-    nn_ptr, # CSR data structure see below.
-    k_min = 1 # Minimum number of neighbors to consider for features computation. 
-    verbose = false # Basic verbose output, for debug purposes.
+    xyz, # The point cloud. A numpy array of shape (n, 3)
+    nn, # CSR data structure see below
+    nn_ptr, # CSR data structure see below
+    k_min = 1 # Minimum number of neighbors to consider for features computation
+    verbose = false # Basic verbose output, for debug purposes
 )
 ```
 
 ```python
-# Sequence of n scales feature computation.
+# Sequence of n scales feature computation
 pgeof.compute_features_multiscale(
     ...
     k_scale # array of neighborhood size
@@ -93,22 +102,23 @@ pgeof.compute_features_multiscale(
 ```
 
 ```python
-# Feature computation with optimal neighborhood selection as exposed in Weinmann et al., 2015. 
+# Feature computation with optimal neighborhood selection as exposed in Weinmann et al., 2015
 # return a set of 12 features per points (11 + the optimal neighborhood size)
 pgeof.compute_features_optimal(
     ...
-    k_min = 1, # Minimum number of neighbors to consider for features computation.
+    k_min = 1, # Minimum number of neighbors to consider for features computation
     k_step = 1, # Step size to take when searching for the optimal neighborhood
-    k_min_search = 1, # Minimum neighborhood size at which to start when searching for the optimal neighborhood size for each point. it should be >= to k_min parameter.
+    k_min_search = 1, # Starting size for searching the optimal neighborhood size. Should be >= k_min 
 )
 ```
 
 ⚠️ Please note that for theses three functions the **neighbors are expected in CSR format**. 
-This allows expressing neighborhoods of varying sizes with dense arrays (eg the output of a 
+This allows expressing neighborhoods of varying sizes with dense arrays (e.g. the output of a 
 radius search).
 
-We provide very tiny and specialized k-NN / radius-NN search routines. 
-They rely on `nanoflann` C++ library and they should be faster and lighter than `scipy` and `sklearn` alternatives.
+We provide very tiny and specialized **k-NN** and **radius-NN** search routines. 
+They rely on `nanoflann` C++ library and should be **faster and lighter than `scipy` and 
+`sklearn` alternatives**.
 
 Here are some examples of how to easily compute and convert typical k-NN or radius-NN neighborhoods to CSR format (`nn` and `nn_ptr` are two flat `uint32` arrays):
 
@@ -147,13 +157,18 @@ knn, _ = pgeof.radius_search(xyz, xyz, radius, k)
 # Converting radius neighbors to CSR format
 nn_ptr = np.r_[0, (knn >= 0).sum(axis=1).cumsum()]
 nn = knn[knn >= 0]
+
 # You may need to convert nn/nn_ptr to uint32 arrays
-...
+nn_ptr = nn_ptr.astype("uint32")
+nn = nn.astype("uint32")
+
+features = pgeof.compute_features(xyz, nn, nn_ptr)
 ```
 
-At last and as a by product we also provide a function to compute a subset of features on the fly. 
-it is inspired by the `Jakteristics` python package (while being less complete but faster).
-the list of feature to compute is given as an array of `EFeatureID`
+At last, and as a by-product, we also provide a function to **compute a subset of features on the fly**. 
+It is inspired by the [jakteristics](https://jakteristics.readthedocs.io) python package (while 
+being less complete but faster).
+The list of features to compute is given as an array of `EFeatureID`.
 
 ```python
 import pgeof
@@ -165,20 +180,30 @@ num_points = 10000
 radius = 0.2
 k = 20
 xyz = np.random.rand(num_points, 3)
-features = pgeof.compute_features_selected(xyz, radius, k, [EFeatureID.Verticality])
+
+# Compute verticality and curvature
+features = pgeof.compute_features_selected(xyz, radius, k, [EFeatureID.Verticality, EFeatureID.Curvature])
 ```
 
 ## Known limitations
 
-Some functions only accept `float` scalar types and `uint32` index types and we avoid implicit cast / conversions.
-This could be a limitation in some situations (`double` coordinates point clouds or need for a big indices).
-Some C++ function could be templated / to accept other type without conversion. For now, this feature is not enabled everywhere to reduce compilation time or enhance code readability but please let us know if you need this feature !
+Some functions only accept `float` scalar types and `uint32` index types, and we avoid implicit
+cast / conversions.
+This could be a limitation in some situations (e.g. point clouds with `double` coordinates or 
+involving very large big integer indices).
+Some C++ functions could be templated / to accept other types without conversion.
+For now, this feature is not enabled everywhere, to reduce compilation time and enhance code 
+readability. 
+Please let us know if you need this feature !
 
-Normal are forced to be oriented in the Z half space. 
+By convention, our normal vectors are forced to be oriented towards positive Z values. 
+We make this design choice in order to return consistently-oriented normals. 
 
 ## Testing
 
-Some basic tests and benchmarks are provided in the tests directory. Test could be run in a clean and reproducible environments via `tox` (`tox run` and `tox run -e bench`).
+Some basic tests and benchmarks are provided in the `tests` directory.
+Tests can be run in a clean and reproducible environments via `tox` (`tox run` and
+`tox run -e bench`).
 
 ## 💳 Credits
 This implementation was largely inspired from [Superpoint Graph](https://github.com/loicland/superpoint_graph). The main modifications here allow: 
