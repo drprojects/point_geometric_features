@@ -32,7 +32,7 @@ template <typename real_t>
 static std::pair<nb::ndarray<nb::numpy, uint32_t, nb::ndim<2>>, nb::ndarray<nb::numpy, real_t, nb::ndim<2>>>
     nanoflann_knn_search(RefCloud<real_t> data, RefCloud<real_t> query, const uint32_t knn)
 {
-    using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2>;
+    using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2_Simple >;
 
     if (knn > data.rows()) { throw std::invalid_argument("knn size is greater than the data point cloud size"); }
 
@@ -87,7 +87,7 @@ static std::pair<nb::ndarray<nb::numpy, int32_t, nb::ndim<2>>, nb::ndarray<nb::n
     nanoflann_radius_search(
         RefCloud<real_t> data, RefCloud<real_t> query, const real_t search_radius, const uint32_t max_knn)
 {
-    using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2>;
+    using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2_Simple >;
 
     if (max_knn > data.rows())
     {
