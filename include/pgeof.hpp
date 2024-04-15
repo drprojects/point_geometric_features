@@ -321,36 +321,31 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>> compute_geome
     RefCloud<real_t> xyz, const real_t search_radius, const uint32_t max_knn,
     const std::vector<EFeatureID>& selected_features)
 {
-    using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2>;
+    using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2_Simple>;
     // TODO: where knn < num of points
+    
     kd_tree_t    kd_tree(3, xyz, 10);
-    const real_t sq_search_radius = search_radius * search_radius;
     const size_t feature_count    = selected_features.size();
-
     const Eigen::Index n_points = xyz.rows();
     real_t*            features = (real_t*)calloc(n_points * feature_count, sizeof(real_t));
-    std::fill(features, features + (n_points * feature_count), real_t(0.0));
     nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
     tf::Executor executor;
     tf::Taskflow taskflow;
+
     taskflow.for_each_index(
         Eigen::Index(0), n_points, Eigen::Index(1),
         [&](Eigen::Index point_id)
         {
-            nanoflann::RKNNResultSet<real_t, int32_t, uint32_t> result_set(max_knn, sq_search_radius);
+            std::vector<nanoflann::ResultItem<Eigen::Index, real_t>> result_set;
+            auto num_found = kd_tree.index_->radiusSearch(xyz.row(point_id).data(), search_radius, result_set);
 
-            std::vector<int32_t> indices(max_knn, -1);  // TODO: maybe int64
-            std::vector<real_t>  sqr_dist(max_knn, real_t(0.0));
-
-            result_set.init(&indices[0], &sqr_dist[0]);
-            kd_tree.index_->findNeighbors(result_set, xyz.row(point_id).data());
-
-            std::vector<int32_t> final_indices;
-            for (size_t i = 0; i < max_knn; ++i)
+            const size_t num_nn = std::min(static_cast<uint32_t>(num_found), max_knn);
+            
+            std::vector<Eigen::Index> final_indices(num_nn);
+            for (size_t id = 0; id < num_nn; ++id)
             {
-                if (indices[i] == -1) { break; }
-                final_indices.push_back(indices[i]);
+                final_indices[id] = result_set[id].first;
             }
 
             if (final_indices.size() > 2)
