@@ -253,7 +253,7 @@ void compute_selected_features(
                 break;
             case EFeatureID::Volume:
                 feature_results[output_id] = std::pow(
-                    val0 * val1 * val2 + real_t(1e-8),
+                    val0 * val1 * val2 + real_t(1e-9),
                     real_t(1.) / real_t(3.));  // 1e-9 eps is a too small value for float32 so we fallback to 1e-8
                 break;
             case EFeatureID::Curvature:
@@ -283,9 +283,11 @@ void compute_selected_features(
             case EFeatureID::Verticality:
                 // The verticality as defined in most of the papers
                 // http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf
-                feature_results[output_id] = real_t(1.0) - std::abs(pca.v2(2));
+                feature_results[output_id] = real_t(1.0) - std::abs(pca.v2.normalized()(2));
+                break;
             case EFeatureID::Eigentropy:
                 feature_results[output_id] = compute_eigentropy(pca);
+                break;
             default:
                 break;
         }
