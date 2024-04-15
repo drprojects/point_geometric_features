@@ -58,11 +58,7 @@ commands = pytest --basetemp="{envtmpdir}" {posargs}
 
 [testenv:bench]
 # globs/wildcards do not work with tox
-commands = pytest --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/bench_jakteristics.py} 
-
-[testenv:ls]
-skipbuild=true
-commands = ls {envtmpdir}
+commands = pytest -s --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/bench_jakteristics.py} 
 """
 
 [tool.cibuildwheel]
