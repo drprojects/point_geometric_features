@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pgeof"
-version = "0.1.0"
+version = "0.2.0"
 readme = "README.md"
 description = "Compute the geometric features associated with each point's neighborhood:"
 requires-python = ">=3.8,<3.13"
