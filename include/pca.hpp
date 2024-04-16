@@ -73,7 +73,7 @@ static inline PCAResult<real_t> pca_from_pointcloud(const PointCloud<real_t>& cl
 {
     // Compute the (3, 3) covariance matrix
     const PointCloud<real_t>          centered_cloud = cloud.rowwise() - cloud.colwise().mean();
-    const Eigen::Matrix<real_t, 3, 3> cov = (centered_cloud.adjoint() * centered_cloud) / real_t(cloud.rows());
+    const Eigen::Matrix<real_t, 3, 3> cov = (centered_cloud.transpose() * centered_cloud) / real_t(cloud.rows());
 
     // Compute the eigenvalues and eigenvectors of the covariance
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix<real_t, 3, 3>> es(cov);
