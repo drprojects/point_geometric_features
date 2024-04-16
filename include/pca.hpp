@@ -27,9 +27,12 @@ using DRefMatrixCloud = nb::DRef<const MatrixCloud<real_t>>;
 
 // epsilon definition, for now same for float an double
 // the eps is meant to stabilize the division when the cloud's 3rd eigenvalue is near 0
-template <typename real_t> constexpr real_t epsilon;
-template <> constexpr float  epsilon<float>  = 1e-3f;
-template <> constexpr double epsilon<double> = 1e-3;
+template <typename real_t>
+constexpr real_t epsilon;
+template <>
+constexpr float epsilon<float> = 1e-3f;
+template <>
+constexpr double epsilon<double> = 1e-3;
 
 template <typename real_t>
 struct PCAResult
@@ -146,7 +149,9 @@ static inline real_t compute_eigentropy(const PCAResult<real_t>& pca)
     // http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf
     const real_t       val_sum = pca.val.sum() + epsilon<real_t>;
     const Vec3<real_t> e       = pca.val / val_sum;
-    return (-e(0) * std::log(e(0) + epsilon<real_t>) - e(1) * std::log(e(1) + epsilon<real_t>) - e(2) * std::log(e(2) + epsilon<real_t>));
+    return (
+        -e(0) * std::log(e(0) + epsilon<real_t>) - e(1) * std::log(e(1) + epsilon<real_t>) -
+        e(2) * std::log(e(2) + epsilon<real_t>));
 };
 
 /**
@@ -222,8 +227,8 @@ void compute_selected_features(
     const real_t val2      = std::sqrt(pca.val(2));
     const real_t val0_fact = real_t(1.0) / (val0 + epsilon<real_t>);
 
-    const auto compute_feature = [val0, val1, val2, val0_fact, &pca](
-                                     const EFeatureID feature_id, const size_t output_id, auto* feature_results)
+    const auto compute_feature =
+        [val0, val1, val2, val0_fact, &pca](const EFeatureID feature_id, const size_t output_id, auto* feature_results)
     {
         switch (feature_id)
         {
@@ -283,7 +288,7 @@ void compute_selected_features(
             case EFeatureID::Verticality:
                 // The verticality as defined in most of the papers
                 // http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf
-                feature_results[output_id] = real_t(1.0) - std::abs(pca.v2.normalized()(2));
+                feature_results[output_id] = real_t(1.0) - std::abs(pca.v2(2));
                 break;
             case EFeatureID::Eigentropy:
                 feature_results[output_id] = compute_eigentropy(pca);
