@@ -11,14 +11,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-2022] 
+        os: [ubuntu-22.04, windows-2022, macos-14] 
         python-version: ['3.9', '3.10', '3.11', '3.12']
+        exclude:
+          - os: macos-14
+            python-version: '3.9' #macos-14 & py39 not supported by setup-python@v5 
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: True
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
