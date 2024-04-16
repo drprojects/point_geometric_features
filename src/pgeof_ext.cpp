@@ -130,7 +130,7 @@ NB_MODULE(pgeof_ext, m)
     )");
     m.def(
         "radius_search", &pgeof::nanoflann_radius_search<float>, "data"_a.noconvert(), "query"_a.noconvert(),
-        "search_radius"_a, "knn"_a = 200, R"(
+        "search_radius"_a, "max_knn"_a, R"(
             Search for the points within a specified sphere in a point cloud.
             
             It could be a fallback replacement for FRNN into SuperPointTransformer code base.
@@ -148,7 +148,7 @@ NB_MODULE(pgeof_ext, m)
         )");
     m.def(
         "compute_features_selected", &pgeof::compute_geometric_features_selected<double>, "xyz"_a.noconvert(),
-        "search_radius"_a, "knn"_a, "selected_features"_a, R"(
+        "search_radius"_a, "max_knn"_a, "selected_features"_a, R"(
             Compute a selected set of geometric features for a point cloud via radius search.
 
             This function aims to mimick the behavior of jakteristics and provide an efficient way
@@ -163,7 +163,7 @@ NB_MODULE(pgeof_ext, m)
         )");
     m.def(
         "compute_features_selected", &pgeof::compute_geometric_features_selected<float>, "xyz"_a.noconvert(),
-        "search_radius"_a, "knn"_a, "selected_features"_a, R"(
+        "search_radius"_a, "max_knn"_a, "selected_features"_a, R"(
             Compute a selected set of geometric features for a point cloud via radius search.
 
             This function aims to mimic the behavior of jakteristics and provide an efficient way

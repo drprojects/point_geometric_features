@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pgeof"
-version = "0.1.0"
+version = "0.2.0"
 readme = "README.md"
 description = "Compute the geometric features associated with each point's neighborhood:"
 requires-python = ">=3.8,<3.13"
@@ -58,11 +58,7 @@ commands = pytest --basetemp="{envtmpdir}" {posargs}
 
 [testenv:bench]
 # globs/wildcards do not work with tox
-commands = pytest --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/bench_jakteristics.py} 
-
-[testenv:ls]
-skipbuild=true
-commands = ls {envtmpdir}
+commands = pytest -s --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/bench_jakteristics.py} 
 """
 
 [tool.cibuildwheel]

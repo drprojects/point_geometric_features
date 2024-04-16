@@ -321,49 +321,49 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>> compute_geome
     RefCloud<real_t> xyz, const real_t search_radius, const uint32_t max_knn,
     const std::vector<EFeatureID>& selected_features)
 {
-    using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2>;
+    using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2_Simple>;
     // TODO: where knn < num of points
-    kd_tree_t    kd_tree(3, xyz, 10);
-    const real_t sq_search_radius = search_radius * search_radius;
-    const size_t feature_count    = selected_features.size();
 
-    const Eigen::Index n_points = xyz.rows();
-    real_t*            features = (real_t*)calloc(n_points * feature_count, sizeof(real_t));
-    std::fill(features, features + (n_points * feature_count), real_t(0.0));
+    kd_tree_t          kd_tree(3, xyz, 10);
+    const size_t       feature_count    = selected_features.size();
+    const Eigen::Index n_points         = xyz.rows();
+    real_t             sq_search_radius = search_radius * search_radius;
+
+    real_t*     features = (real_t*)calloc(n_points * feature_count, sizeof(real_t));
     nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
     tf::Executor executor;
     tf::Taskflow taskflow;
+
     taskflow.for_each_index(
         Eigen::Index(0), n_points, Eigen::Index(1),
         [&](Eigen::Index point_id)
         {
-            nanoflann::RKNNResultSet<real_t, int32_t, uint32_t> result_set(max_knn, sq_search_radius);
+            std::vector<nanoflann::ResultItem<Eigen::Index, real_t>> result_set;
 
-            std::vector<int32_t> indices(max_knn, -1);  // TODO: maybe int64
-            std::vector<real_t>  sqr_dist(max_knn, real_t(0.0));
+            nanoflann::RadiusResultSet<real_t, Eigen::Index> radius_result_set(sq_search_radius, result_set);
+            const auto                                       num_found =
+                kd_tree.index_->radiusSearchCustomCallback(xyz.row(point_id).data(), radius_result_set);
 
-            result_set.init(&indices[0], &sqr_dist[0]);
-            kd_tree.index_->findNeighbors(result_set, xyz.row(point_id).data());
+            // not enough point, no feature computation
+            if (num_found < 2) return;
 
-            std::vector<int32_t> final_indices;
-            for (size_t i = 0; i < max_knn; ++i)
+            // partial sort for max_knn
+            if (num_found > max_knn)
             {
-                if (indices[i] == -1) { break; }
-                final_indices.push_back(indices[i]);
+                std::partial_sort(
+                    result_set.begin(), result_set.begin() + max_knn, result_set.end(), nanoflann::IndexDist_Sorter());
             }
 
-            if (final_indices.size() > 2)
-            {
-                const PointCloud<real_t> cloud = xyz(final_indices, Eigen::all);
-                const PCAResult<real_t>  pca   = pca_from_pointcloud(cloud);
-                compute_selected_features(pca, selected_features, &features[point_id * feature_count]);
-            }
-        },
-        tf::StaticPartitioner(0));
+            const size_t num_nn = std::min(static_cast<uint32_t>(num_found), max_knn);
+
+            PointCloud<real_t> cloud(num_nn, 3);
+            for (size_t id = 0; id < num_nn; ++id) { cloud.row(id) = xyz.row(result_set[id].first); }
+            const PCAResult<real_t> pca = pca_from_pointcloud(cloud);
+            compute_selected_features(pca, selected_features, &features[point_id * feature_count]);
+        });
     executor.run(taskflow).get();
 
-    const size_t shape[2] = {static_cast<size_t>(n_points), feature_count};
-    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>>(features, 2, shape, owner_features);
+    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>>(features, {static_cast<size_t>(n_points), feature_count}, owner_features);
 }
 }  // namespace pgeof

@@ -27,9 +27,12 @@ using DRefMatrixCloud = nb::DRef<const MatrixCloud<real_t>>;
 
 // epsilon definition, for now same for float an double
 // the eps is meant to stabilize the division when the cloud's 3rd eigenvalue is near 0
-template <typename real_t> constexpr real_t epsilon;
-template <> constexpr float  epsilon<float>  = 1e-3f;
-template <> constexpr double epsilon<double> = 1e-3;
+template <typename real_t>
+constexpr real_t epsilon;
+template <>
+constexpr float epsilon<float> = 1e-3f;
+template <>
+constexpr double epsilon<double> = 1e-3;
 
 template <typename real_t>
 struct PCAResult
@@ -70,10 +73,10 @@ static inline PCAResult<real_t> pca_from_pointcloud(const PointCloud<real_t>& cl
 {
     // Compute the (3, 3) covariance matrix
     const PointCloud<real_t>          centered_cloud = cloud.rowwise() - cloud.colwise().mean();
-    const Eigen::Matrix<real_t, 3, 3> cov = (centered_cloud.adjoint() * centered_cloud) / real_t(cloud.rows());
+    const Eigen::Matrix<real_t, 3, 3> cov = (centered_cloud.transpose() * centered_cloud) / real_t(cloud.rows());
 
     // Compute the eigenvalues and eigenvectors of the covariance
-    Eigen::EigenSolver<Eigen::Matrix<real_t, 3, 3>> es(cov);
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix<real_t, 3, 3>> es(cov);
 
     // Sort the values and vectors in order of increasing eigenvalue
     const auto ev = es.eigenvalues().real();
@@ -146,7 +149,9 @@ static inline real_t compute_eigentropy(const PCAResult<real_t>& pca)
     // http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf
     const real_t       val_sum = pca.val.sum() + epsilon<real_t>;
     const Vec3<real_t> e       = pca.val / val_sum;
-    return (-e(0) * std::log(e(0) + epsilon<real_t>) - e(1) * std::log(e(1) + epsilon<real_t>) - e(2) * std::log(e(2) + epsilon<real_t>));
+    return (
+        -e(0) * std::log(e(0) + epsilon<real_t>) - e(1) * std::log(e(1) + epsilon<real_t>) -
+        e(2) * std::log(e(2) + epsilon<real_t>));
 };
 
 /**
@@ -222,8 +227,8 @@ void compute_selected_features(
     const real_t val2      = std::sqrt(pca.val(2));
     const real_t val0_fact = real_t(1.0) / (val0 + epsilon<real_t>);
 
-    const auto compute_feature = [val0, val1, val2, val0_fact, &pca](
-                                     const EFeatureID feature_id, const size_t output_id, auto* feature_results)
+    const auto compute_feature =
+        [val0, val1, val2, val0_fact, &pca](const EFeatureID feature_id, const size_t output_id, auto* feature_results)
     {
         switch (feature_id)
         {
@@ -253,7 +258,7 @@ void compute_selected_features(
                 break;
             case EFeatureID::Volume:
                 feature_results[output_id] = std::pow(
-                    val0 * val1 * val2 + real_t(1e-8),
+                    val0 * val1 * val2 + real_t(1e-9),
                     real_t(1.) / real_t(3.));  // 1e-9 eps is a too small value for float32 so we fallback to 1e-8
                 break;
             case EFeatureID::Curvature:
@@ -284,8 +289,10 @@ void compute_selected_features(
                 // The verticality as defined in most of the papers
                 // http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf
                 feature_results[output_id] = real_t(1.0) - std::abs(pca.v2(2));
+                break;
             case EFeatureID::Eigentropy:
                 feature_results[output_id] = compute_eigentropy(pca);
+                break;
             default:
                 break;
         }

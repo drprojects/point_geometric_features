@@ -14,6 +14,7 @@ def test_knn():
     k_new, _ = pgeof.knn_search(xyz, xyz, knn)
     np.testing.assert_equal(k_legacy, k_new)
 
+
 def test_radius_search():
     knn = 10
     radius = 0.2
@@ -24,6 +25,7 @@ def test_radius_search():
     k_legacy[k_legacy == xyz.shape[0]] = -1
     k_new, _ = pgeof.radius_search(xyz, xyz, radius, knn)
     np.testing.assert_equal(k_legacy, k_new)
+
 
 def test_pgeof_multiscale():
     # Generate a random synthetic point cloud and NNs
