@@ -323,11 +323,13 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>> compute_geome
 {
     using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2_Simple>;
     // TODO: where knn < num of points
-    
-    kd_tree_t    kd_tree(3, xyz, 10);
-    const size_t feature_count    = selected_features.size();
-    const Eigen::Index n_points = xyz.rows();
-    real_t*            features = (real_t*)calloc(n_points * feature_count, sizeof(real_t));
+
+    kd_tree_t          kd_tree(3, xyz, 10);
+    const size_t       feature_count    = selected_features.size();
+    const Eigen::Index n_points         = xyz.rows();
+    real_t             sq_search_radius = search_radius * search_radius;
+
+    real_t*     features = (real_t*)calloc(n_points * feature_count, sizeof(real_t));
     nb::capsule owner_features(features, [](void* f) noexcept { delete[] (real_t*)f; });
 
     tf::Executor executor;
@@ -338,27 +340,30 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>> compute_geome
         [&](Eigen::Index point_id)
         {
             std::vector<nanoflann::ResultItem<Eigen::Index, real_t>> result_set;
-            auto num_found = kd_tree.index_->radiusSearch(xyz.row(point_id).data(), search_radius, result_set);
+
+            nanoflann::RadiusResultSet<real_t, Eigen::Index> radius_result_set(sq_search_radius, result_set);
+            const auto                                       num_found =
+                kd_tree.index_->radiusSearchCustomCallback(xyz.row(point_id).data(), radius_result_set);
+
+            // not enough point, no feature computation
+            if (num_found < 2) return;
+
+            // partial sort for max_knn
+            if (num_found > max_knn)
+            {
+                std::partial_sort(
+                    result_set.begin(), result_set.begin() + max_knn, result_set.end(), nanoflann::IndexDist_Sorter());
+            }
 
             const size_t num_nn = std::min(static_cast<uint32_t>(num_found), max_knn);
-            
-            std::vector<Eigen::Index> final_indices(num_nn);
-            for (size_t id = 0; id < num_nn; ++id)
-            {
-                final_indices[id] = result_set[id].first;
-            }
 
-            if (final_indices.size() > 2)
-            {
-                const PointCloud<real_t> cloud = xyz(final_indices, Eigen::all);
-                const PCAResult<real_t>  pca   = pca_from_pointcloud(cloud);
-                compute_selected_features(pca, selected_features, &features[point_id * feature_count]);
-            }
-        },
-        tf::StaticPartitioner(0));
+            PointCloud<real_t> cloud(num_nn, 3);
+            for (size_t id = 0; id < num_nn; ++id) { cloud.row(id) = xyz.row(result_set[id].first); }
+            const PCAResult<real_t> pca = pca_from_pointcloud(cloud);
+            compute_selected_features(pca, selected_features, &features[point_id * feature_count]);
+        });
     executor.run(taskflow).get();
 
-    const size_t shape[2] = {static_cast<size_t>(n_points), feature_count};
-    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>>(features, 2, shape, owner_features);
+    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>>(features, {static_cast<size_t>(n_points), feature_count}, owner_features);
 }
 }  // namespace pgeof
