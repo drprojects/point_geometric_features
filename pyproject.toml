@@ -36,6 +36,25 @@ build-dir = "build/{wheel_tag}"
 
 cmake.build-type = "Release"
 
+# make sdist a lot lighter by removing some useless files from third_party
+# ⚠️  be sure to keep copyrights and license file
+sdist.exclude = [
+  "third_party/eigen/bench",
+  "third_party/eigen/demos",
+  "third_party/eigen/doc",
+  "third_party/taskflow/3rd-party",
+  "third_party/taskflow/benchmarks",
+  "third_party/taskflow/docs",
+  "third_party/taskflow/doxygen",
+  "third_party/taskflow/examples",
+  "third_party/taskflow/sandbox",
+  "third_party/taskflow/unittests",
+  "third_party/nanobind/doc",
+  "third_party/nanobind/examples",
+  "third_party/nanobind/scripts",
+  "third_party/nanobind/tests",
+]
+
 [tool.tox]
 legacy_tox_ini = """
 [tox]
