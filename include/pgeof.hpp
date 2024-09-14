@@ -4,6 +4,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -73,7 +74,7 @@ static inline void flush() { std::cout << std::endl; };
  * @return the geometric features associated with each point's neighborhood in a (num_points, features_count) nd::array.
  */
 template <typename real_t = float, const size_t feature_count = 11>
-static nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<ssize_t>(feature_count)>> compute_geometric_features(
+static nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<nb::ssize_t>(feature_count)>> compute_geometric_features(
     RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn, nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr,
     const size_t k_min, const bool verbose)
 {
@@ -111,7 +112,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<ssize_t>(feature
     // Final print to start on a new line
     if (verbose) log::flush();
     const size_t shape[2] = {n_points, feature_count};
-    return nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<ssize_t>(feature_count)>>(
+    return nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<nb::ssize_t>(feature_count)>>(
         features, 2, shape, owner_features);
 }
 /**
@@ -156,7 +157,7 @@ static bool check_scales(const std::vector<uint32_t>& k_scales)
  * nd::array
  */
 template <typename real_t, const size_t feature_count = 11>
-static nb::ndarray<nb::numpy, real_t, nb::shape<-1, -1, static_cast<ssize_t>(feature_count)>>
+static nb::ndarray<nb::numpy, real_t, nb::shape<-1, -1, static_cast<nb::ssize_t>(feature_count)>>
     compute_geometric_features_multiscale(
         RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn,
         nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr, const std::vector<uint32_t>& k_scales, const bool verbose)
@@ -205,7 +206,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<-1, -1, static_cast<ssize_t>(fea
     if (verbose) log::flush();
 
     const size_t shape[3] = {n_points, n_scales, feature_count};
-    return nb::ndarray<nb::numpy, real_t, nb::shape<-1, -1, static_cast<ssize_t>(feature_count)>>(
+    return nb::ndarray<nb::numpy, real_t, nb::shape<-1, -1, static_cast<nb::ssize_t>(feature_count)>>(
         features, 3, shape, owner_features);
 }
 
@@ -240,7 +241,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<-1, -1, static_cast<ssize_t>(fea
  * @return Geometric features associated with each point's neighborhood in a (num_points, features_count) nd::array
  */
 template <typename real_t, const size_t feature_count = 12>
-static nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<ssize_t>(feature_count)>>
+static nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<nb::ssize_t>(feature_count)>>
     compute_geometric_features_optimal(
         RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn,
         nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr, const uint32_t k_min, const uint32_t k_step,
@@ -304,7 +305,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<ssize_t>(feature
     if (verbose) log::flush();
 
     const size_t shape[2] = {n_points, feature_count};
-    return nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<ssize_t>(feature_count)>>(
+    return nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<nb::ssize_t>(feature_count)>>(
         features, 2, shape, owner_features);
 }
 
