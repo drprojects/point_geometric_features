@@ -4,7 +4,6 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 
-
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -74,9 +73,10 @@ static inline void flush() { std::cout << std::endl; };
  * @return the geometric features associated with each point's neighborhood in a (num_points, features_count) nd::array.
  */
 template <typename real_t = float, const size_t feature_count = 11>
-static nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<nb::ssize_t>(feature_count)>> compute_geometric_features(
-    RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn, nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr,
-    const size_t k_min, const bool verbose)
+static nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<nb::ssize_t>(feature_count)>>
+    compute_geometric_features(
+        RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn,
+        nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr, const size_t k_min, const bool verbose)
 {
     if (k_min < 1) { throw std::invalid_argument("k_min should be > 1"); }
     // Each point can be treated in parallel
@@ -330,7 +330,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<-1, -1>> compute_geometric_featu
     using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2_Simple>;
     // TODO: where knn < num of points
 
-    kd_tree_t          kd_tree(3, xyz, 10);
+    kd_tree_t          kd_tree(3, xyz, 10, 0);
     const size_t       feature_count    = selected_features.size();
     const Eigen::Index n_points         = xyz.rows();
     real_t             sq_search_radius = search_radius * search_radius;
