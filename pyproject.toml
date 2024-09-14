@@ -1,10 +1,10 @@
 [build-system]
-requires = ["scikit-build-core >=0.4.3", "nanobind == 1.9.2"]
+requires = ["scikit-build-core >=0.4.3", "nanobind == 2.1.0"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "pgeof"
-version = "0.2.0"
+version = "0.3.0"
 readme = "README.md"
 description = "Compute the geometric features associated with each point's neighborhood:"
 requires-python = ">=3.8,<3.13"
@@ -67,4 +67,4 @@ archs = ["auto64"] # limit to 64bits builds
 
 # Needed for full C++17 support
 [tool.cibuildwheel.macos.environment]
-MACOSX_DEPLOYMENT_TARGET = "10.14"
+MACOSX_DEPLOYMENT_TARGET = "11.0"
