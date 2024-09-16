@@ -11,7 +11,8 @@ jakteristics = pytest.importorskip("jakteristics")
 
 @pytest.fixture
 def random_point_cloud():
-    return np.random.rand(1000000, 3) * 100
+    rng = np.random.default_rng()
+    return rng.random(0, 100, size=((1000000, 3)))
 
 
 @pytest.mark.benchmark(group="feature-computation-jak", disable_gc=True, warmup=True)

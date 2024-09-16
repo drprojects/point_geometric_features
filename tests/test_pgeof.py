@@ -7,7 +7,8 @@ from tests.helpers import random_nn
 
 def test_knn():
     knn = 10
-    xyz = np.random.rand(1000, 3)
+    rng = np.random.default_rng()
+    xyz = rng.random(size=(1000, 3))
     xyz = xyz.astype("float32")
     tree = KDTree(xyz)
     _, k_legacy = tree.query(xyz, k=knn, workers=-1)
@@ -18,7 +19,8 @@ def test_knn():
 def test_radius_search():
     knn = 10
     radius = 0.2
-    xyz = np.random.rand(1000, 3)
+    rng = np.random.default_rng()
+    xyz = rng.random(size=(1000, 3))
     xyz = xyz.astype("float32")
     tree = KDTree(xyz)
     _, k_legacy = tree.query(xyz, k=knn, distance_upper_bound=radius, workers=-1)

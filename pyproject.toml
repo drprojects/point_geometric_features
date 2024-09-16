@@ -52,11 +52,33 @@ sdist.exclude = [
   "third_party/taskflow/examples",
   "third_party/taskflow/sandbox",
   "third_party/taskflow/unittests",
-  "third_party/nanobind/doc",
-  "third_party/nanobind/examples",
-  "third_party/nanobind/scripts",
-  "third_party/nanobind/tests",
 ]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+# TODO Add D, PTH, RET, disabled for now as they collides with intial choices
+select = ["E", "W", "YTT", "NPY", "PYI", "Q", "F", "B", "I", "SIM", "RUF"]
+# TODO: for now we ignore "Line too long error (E501)" 
+# because our comments are too longs
+# code formatting will take care of the line length in code anyway
+ignore = [
+  "E501",
+  # Ignore docstring in public package and module
+  "D100",
+  "D104",
+  # Blank line before class
+  "D203",
+  # multiline summary second line
+  "D213",
+  # yoda conditions
+  "SIM300",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pgeof"]
 
 [tool.tox]
 legacy_tox_ini = """
