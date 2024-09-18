@@ -1,7 +1,6 @@
 
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
-#include <nanobind/stl/pair.h>
 #include <nanobind/stl/vector.h>
 
 #include "nn_search.hpp"

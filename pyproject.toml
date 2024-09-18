@@ -1,10 +1,13 @@
 [build-system]
-requires = ["scikit-build-core >=0.4.3", "nanobind == 1.9.2"]
+requires = ["scikit-build-core >=0.4.3", 
+  "nanobind == 2.1.0",
+  "typing_extensions;python_version < '3.11'"
+]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "pgeof"
-version = "0.2.0"
+version = "0.3.0"
 readme = "README.md"
 description = "Compute the geometric features associated with each point's neighborhood:"
 requires-python = ">=3.8,<3.13"
@@ -35,6 +38,47 @@ minimum-version = "0.4"
 build-dir = "build/{wheel_tag}"
 
 cmake.build-type = "Release"
+
+# make sdist a lot lighter by removing some useless files from third_party
+# ⚠️  be sure to keep copyrights and license file
+sdist.exclude = [
+  "third_party/eigen/bench",
+  "third_party/eigen/demos",
+  "third_party/eigen/doc",
+  "third_party/taskflow/3rd-party",
+  "third_party/taskflow/benchmarks",
+  "third_party/taskflow/docs",
+  "third_party/taskflow/doxygen",
+  "third_party/taskflow/examples",
+  "third_party/taskflow/sandbox",
+  "third_party/taskflow/unittests",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+# TODO Add D, PTH, RET, disabled for now as they collides with intial choices
+select = ["E", "W", "YTT", "NPY", "PYI", "Q", "F", "B", "I", "SIM", "RUF"]
+# TODO: for now we ignore "Line too long error (E501)" 
+# because our comments are too longs
+# code formatting will take care of the line length in code anyway
+ignore = [
+  "E501",
+  # Ignore docstring in public package and module
+  "D100",
+  "D104",
+  # Blank line before class
+  "D203",
+  # multiline summary second line
+  "D213",
+  # yoda conditions
+  "SIM300",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pgeof"]
 
 [tool.tox]
 legacy_tox_ini = """
@@ -67,4 +111,4 @@ archs = ["auto64"] # limit to 64bits builds
 
 # Needed for full C++17 support
 [tool.cibuildwheel.macos.environment]
-MACOSX_DEPLOYMENT_TARGET = "10.14"
+MACOSX_DEPLOYMENT_TARGET = "11.0"

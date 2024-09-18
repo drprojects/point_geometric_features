@@ -73,9 +73,10 @@ static inline void flush() { std::cout << std::endl; };
  * @return the geometric features associated with each point's neighborhood in a (num_points, features_count) nd::array.
  */
 template <typename real_t = float, const size_t feature_count = 11>
-static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute_geometric_features(
-    RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn, nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr,
-    const size_t k_min, const bool verbose)
+static nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<nb::ssize_t>(feature_count)>>
+    compute_geometric_features(
+        RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn,
+        nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr, const size_t k_min, const bool verbose)
 {
     if (k_min < 1) { throw std::invalid_argument("k_min should be > 1"); }
     // Each point can be treated in parallel
@@ -111,7 +112,8 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
     // Final print to start on a new line
     if (verbose) log::flush();
     const size_t shape[2] = {n_points, feature_count};
-    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>>(features, 2, shape, owner_features);
+    return nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<nb::ssize_t>(feature_count)>>(
+        features, 2, shape, owner_features);
 }
 /**
  * Convenience function that check that scales are well ordered in increasing order.
@@ -155,9 +157,10 @@ static bool check_scales(const std::vector<uint32_t>& k_scales)
  * nd::array
  */
 template <typename real_t, const size_t feature_count = 11>
-static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any, feature_count>> compute_geometric_features_multiscale(
-    RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn, nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr,
-    const std::vector<uint32_t>& k_scales, const bool verbose)
+static nb::ndarray<nb::numpy, real_t, nb::shape<-1, -1, static_cast<nb::ssize_t>(feature_count)>>
+    compute_geometric_features_multiscale(
+        RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn,
+        nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr, const std::vector<uint32_t>& k_scales, const bool verbose)
 {
     if (!check_scales(k_scales))
     {
@@ -203,7 +206,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any, feature_count>
     if (verbose) log::flush();
 
     const size_t shape[3] = {n_points, n_scales, feature_count};
-    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any, feature_count>>(
+    return nb::ndarray<nb::numpy, real_t, nb::shape<-1, -1, static_cast<nb::ssize_t>(feature_count)>>(
         features, 3, shape, owner_features);
 }
 
@@ -238,9 +241,11 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any, feature_count>
  * @return Geometric features associated with each point's neighborhood in a (num_points, features_count) nd::array
  */
 template <typename real_t, const size_t feature_count = 12>
-static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute_geometric_features_optimal(
-    RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn, nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr,
-    const uint32_t k_min, const uint32_t k_step, const uint32_t k_min_search, const bool verbose)
+static nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<nb::ssize_t>(feature_count)>>
+    compute_geometric_features_optimal(
+        RefCloud<real_t> xyz, nb::ndarray<const uint32_t, nb::ndim<1>> nn,
+        nb::ndarray<const uint32_t, nb::ndim<1>> nn_ptr, const uint32_t k_min, const uint32_t k_step,
+        const uint32_t k_min_search, const bool verbose)
 {
     if (k_min < 1 && k_min_search < 1) { throw std::invalid_argument("k_min and k_min_search should be > 1"); }
     // Each point can be treated in parallel
@@ -300,7 +305,8 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
     if (verbose) log::flush();
 
     const size_t shape[2] = {n_points, feature_count};
-    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>>(features, 2, shape, owner_features);
+    return nb::ndarray<nb::numpy, real_t, nb::shape<-1, static_cast<nb::ssize_t>(feature_count)>>(
+        features, 2, shape, owner_features);
 }
 
 /**
@@ -317,14 +323,14 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, feature_count>> compute
  * @return Geometric features associated with each point's neighborhood in a (num_points, features_count) nd::array
  */
 template <typename real_t>
-static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>> compute_geometric_features_selected(
+static nb::ndarray<nb::numpy, real_t, nb::shape<-1, -1>> compute_geometric_features_selected(
     RefCloud<real_t> xyz, const real_t search_radius, const uint32_t max_knn,
     const std::vector<EFeatureID>& selected_features)
 {
     using kd_tree_t = nanoflann::KDTreeEigenMatrixAdaptor<RefCloud<real_t>, 3, nanoflann::metric_L2_Simple>;
     // TODO: where knn < num of points
 
-    kd_tree_t          kd_tree(3, xyz, 10);
+    kd_tree_t          kd_tree(3, xyz, 10, 0);
     const size_t       feature_count    = selected_features.size();
     const Eigen::Index n_points         = xyz.rows();
     real_t             sq_search_radius = search_radius * search_radius;
@@ -364,6 +370,7 @@ static nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>> compute_geome
         });
     executor.run(taskflow).get();
 
-    return nb::ndarray<nb::numpy, real_t, nb::shape<nb::any, nb::any>>(features, {static_cast<size_t>(n_points), feature_count}, owner_features);
+    return nb::ndarray<nb::numpy, real_t, nb::shape<-1, -1>>(
+        features, {static_cast<size_t>(n_points), feature_count}, owner_features);
 }
 }  // namespace pgeof

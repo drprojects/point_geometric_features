@@ -36,7 +36,7 @@ static std::pair<nb::ndarray<nb::numpy, uint32_t, nb::ndim<2>>, nb::ndarray<nb::
 
     if (knn > data.rows()) { throw std::invalid_argument("knn size is greater than the data point cloud size"); }
 
-    kd_tree_t          kd_tree(3, data, 10);
+    kd_tree_t          kd_tree(3, data, 10, 0);
     const Eigen::Index n_points = query.rows();
     uint32_t*          indices  = new uint32_t[knn * n_points];
     nb::capsule        owner_indices(indices, [](void* p) noexcept { delete[] (uint32_t*)p; });
@@ -94,7 +94,7 @@ static std::pair<nb::ndarray<nb::numpy, int32_t, nb::ndim<2>>, nb::ndarray<nb::n
         throw std::invalid_argument("max knn size is greater than the data point cloud size");
     }
 
-    kd_tree_t    kd_tree(3, data, 10);
+    kd_tree_t    kd_tree(3, data, 10, 0);
     const real_t sq_search_radius = search_radius * search_radius;
 
     const Eigen::Index n_points = query.rows();

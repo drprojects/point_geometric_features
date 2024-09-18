@@ -7,7 +7,8 @@ import pgeof
 
 @pytest.fixture
 def random_point_cloud():
-    return np.random.rand(100000, 3).astype("float32")
+    rng = np.random.default_rng()
+    return rng.random(0, 100, size=((1000000, 3))).astype("float32")
 
 
 @pytest.mark.benchmark(group="knn", disable_gc=True, warmup=True)
