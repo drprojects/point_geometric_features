@@ -7,10 +7,10 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pgeof"
-version = "0.3.0"
+version = "0.3.1"
 readme = "README.md"
 description = "Compute the geometric features associated with each point's neighborhood:"
-requires-python = ">=3.8,<3.13"
+requires-python = ">=3.9" # uses stable ABI
 license = {file = "LICENSE"}
 authors = [
   {name = "Loic Landrieu", email = "loic.landrieu@enpc.fr"},
@@ -23,7 +23,7 @@ classifiers = [
   "Topic :: Scientific/Engineering"
 ]
 dependencies = [
-  "numpy >= 1.7, < 2"
+  "numpy >= 1.7"
 ]
 
 [project.urls]
@@ -90,12 +90,13 @@ python =
     3.10: py310
     3.11: py311
     3.12: py312
+    3.13: py313
 
 [testenv]
 deps =
   pytest >= 7.4
   pytest-benchmark ~= 4.0
-  numpy >= 1.7, < 2
+  numpy >= 1.7
   scipy
   jakteristics;platform_system=="Windows" or platform_system=="Linux" 
 commands = pytest --basetemp="{envtmpdir}" {posargs}
@@ -106,8 +107,8 @@ commands = pytest -s --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/
 """
 
 [tool.cibuildwheel]
-build = "cp3{9,10,11,12}-*"
-archs = ["auto64"] # limit to 64bits builds
+build = "cp3{9,10,11,12}-*" # uses stable abi for py >= 3.12 
+archs = ["auto64"] # limits to 64bits builds
 
 # Needed for full C++17 support
 [tool.cibuildwheel.macos.environment]
