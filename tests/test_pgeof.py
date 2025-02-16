@@ -8,8 +8,7 @@ from tests.helpers import random_nn
 def test_knn():
     knn = 10
     rng = np.random.default_rng()
-    xyz = rng.random(size=(1000, 3))
-    xyz = xyz.astype("float32")
+    xyz = rng.uniform(0.0, 200.0, size=(1000, 3)).astype(np.float32)
     tree = KDTree(xyz)
     _, k_legacy = tree.query(xyz, k=knn, workers=-1)
     k_new, _ = pgeof.knn_search(xyz, xyz, knn)
@@ -20,8 +19,7 @@ def test_radius_search():
     knn = 10
     radius = 0.2
     rng = np.random.default_rng()
-    xyz = rng.random(size=(1000, 3))
-    xyz = xyz.astype("float32")
+    xyz = rng.random(size=(1000, 3), dtype=np.float32)
     tree = KDTree(xyz)
     _, k_legacy = tree.query(xyz, k=knn, distance_upper_bound=radius, workers=-1)
     k_legacy[k_legacy == xyz.shape[0]] = -1
