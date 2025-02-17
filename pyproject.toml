@@ -109,6 +109,7 @@ commands = pytest -s --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/
 [tool.cibuildwheel]
 build = "cp3{8,9,10,11,12,13}-*"
 archs = ["auto64"]               # limits to 64bits builds
+skip = "cp38-macosx_arm64"
 
 # Needed for full C++17 support
 [tool.cibuildwheel.macos.environment]
