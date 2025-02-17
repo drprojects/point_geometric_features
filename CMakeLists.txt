@@ -12,9 +12,24 @@ execute_process(
   COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE NB_DIR)
 list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
-find_package(nanobind CONFIG REQUIRED)
 
-nanobind_add_module(pgeof_ext NOMINSIZE STABLE_ABI LTO src/pgeof_ext.cpp)
+find_package(nanobind CONFIG REQUIRED)
+find_package(Threads REQUIRED)
+
+if(MSVC)
+  # Static link of MSVC rt for optimal compatibility
+  # It avoids to mess with embedded MSVC rt coming from other packages (see PyQT5)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  # Same, enabling LTO (LTGC for MS) give less ABI compatibility, so we dissable it.
+  # see https://learn.microsoft.com/en-us/cpp/porting/binary-compat-2015-2017?view=msvc-170
+  # for more details.
+  nanobind_add_module(pgeof_ext NOMINSIZE STABLE_ABI src/pgeof_ext.cpp)
+else()
+  # we enable LTO on Linux and MacOS.
+  nanobind_add_module(pgeof_ext NOMINSIZE STABLE_ABI LTO src/pgeof_ext.cpp)
+endif()
+
+target_link_libraries(pgeof_ext PRIVATE Threads::Threads)
 
 nanobind_add_stub(
    pgeof_ext_stub
@@ -25,10 +40,10 @@ nanobind_add_stub(
    DEPENDS pgeof_ext
 )
 
-# All lib are headeer only. 
-# it's faster to include like this than using exported targets 
+# All lib are header only.
+# it's faster to include like this than using exported targets
 # (i.e add_subdirectories(...))
-target_include_directories(pgeof_ext PRIVATE "include" "third_party/eigen" "third_party/nanoflann/include" "third_party/taskflow") 
+target_include_directories(pgeof_ext PRIVATE "include" "third_party/eigen" "third_party/nanoflann/include" "third_party/taskflow")
 
 install(TARGETS pgeof_ext LIBRARY DESTINATION pgeof)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pgeof_ext.pyi ${CMAKE_CURRENT_BINARY_DIR}/py.typed DESTINATION pgeof)
