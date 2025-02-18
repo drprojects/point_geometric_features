@@ -1,30 +1,29 @@
 [build-system]
-requires = ["scikit-build-core >=0.4.3", 
-  "nanobind == 2.1.0",
-  "typing_extensions;python_version < '3.11'"
+requires = [
+    "scikit-build-core >=0.4.3",
+    "nanobind == 2.1.0",
+    "typing_extensions;python_version < '3.11'",
 ]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "pgeof"
-version = "0.3.0"
+version = "0.3.2"
 readme = "README.md"
 description = "Compute the geometric features associated with each point's neighborhood:"
-requires-python = ">=3.8,<3.13"
-license = {file = "LICENSE"}
+requires-python = ">=3.8,<3.14"
+license = { file = "LICENSE" }
 authors = [
-  {name = "Loic Landrieu", email = "loic.landrieu@enpc.fr"},
-  {name = "Damien Robert", email = "damien.robert@uzh.ch"}
+    { name = "Loic Landrieu", email = "loic.landrieu@enpc.fr" },
+    { name = "Damien Robert", email = "damien.robert@uzh.ch" },
 ]
 keywords = ["point clouds", "features", "3D", "LiDAR"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Programming Language :: Python",
-  "Topic :: Scientific/Engineering"
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python",
+    "Topic :: Scientific/Engineering",
 ]
-dependencies = [
-  "numpy >= 1.7, < 2"
-]
+dependencies = ["numpy >= 1.7"]
 
 [project.urls]
 homepage = "https://github.com/drprojects/point_geometric_features"
@@ -42,16 +41,16 @@ cmake.build-type = "Release"
 # make sdist a lot lighter by removing some useless files from third_party
 # ⚠️  be sure to keep copyrights and license file
 sdist.exclude = [
-  "third_party/eigen/bench",
-  "third_party/eigen/demos",
-  "third_party/eigen/doc",
-  "third_party/taskflow/3rd-party",
-  "third_party/taskflow/benchmarks",
-  "third_party/taskflow/docs",
-  "third_party/taskflow/doxygen",
-  "third_party/taskflow/examples",
-  "third_party/taskflow/sandbox",
-  "third_party/taskflow/unittests",
+    "third_party/eigen/bench",
+    "third_party/eigen/demos",
+    "third_party/eigen/doc",
+    "third_party/taskflow/3rd-party",
+    "third_party/taskflow/benchmarks",
+    "third_party/taskflow/docs",
+    "third_party/taskflow/doxygen",
+    "third_party/taskflow/examples",
+    "third_party/taskflow/sandbox",
+    "third_party/taskflow/unittests",
 ]
 
 [tool.ruff]
@@ -61,20 +60,20 @@ line-length = 120
 [tool.ruff.lint]
 # TODO Add D, PTH, RET, disabled for now as they collides with intial choices
 select = ["E", "W", "YTT", "NPY", "PYI", "Q", "F", "B", "I", "SIM", "RUF"]
-# TODO: for now we ignore "Line too long error (E501)" 
+# TODO: for now we ignore "Line too long error (E501)"
 # because our comments are too longs
 # code formatting will take care of the line length in code anyway
 ignore = [
-  "E501",
-  # Ignore docstring in public package and module
-  "D100",
-  "D104",
-  # Blank line before class
-  "D203",
-  # multiline summary second line
-  "D213",
-  # yoda conditions
-  "SIM300",
+    "E501",
+    # Ignore docstring in public package and module
+    "D100",
+    "D104",
+    # Blank line before class
+    "D203",
+    # multiline summary second line
+    "D213",
+    # yoda conditions
+    "SIM300",
 ]
 
 [tool.ruff.lint.isort]
@@ -86,28 +85,31 @@ legacy_tox_ini = """
 
 [gh-actions]
 python =
+    3.8: py39
     3.9: py39
     3.10: py310
     3.11: py311
     3.12: py312
+    3.13: py313
 
 [testenv]
 deps =
   pytest >= 7.4
   pytest-benchmark ~= 4.0
-  numpy >= 1.7, < 2
+  numpy >= 1.7
   scipy
-  jakteristics;platform_system=="Windows" or platform_system=="Linux" 
+  jakteristics;platform_system=="Windows" or platform_system=="Linux"
 commands = pytest --basetemp="{envtmpdir}" {posargs}
 
 [testenv:bench]
 # globs/wildcards do not work with tox
-commands = pytest -s --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/bench_jakteristics.py} 
+commands = pytest -s --basetemp="{envtmpdir}" {posargs:tests/bench_knn.py tests/bench_jakteristics.py}
 """
 
 [tool.cibuildwheel]
-build = "cp3{9,10,11,12}-*"
-archs = ["auto64"] # limit to 64bits builds
+build = "cp3{8,9,10,11,12,13}-*"
+archs = ["auto64"]               # limits to 64bits builds
+skip = "cp38-macosx_arm64"
 
 # Needed for full C++17 support
 [tool.cibuildwheel.macos.environment]

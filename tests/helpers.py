@@ -5,7 +5,7 @@ from scipy.spatial import KDTree
 def random_nn(num_points, k):
     # Generate a random synthetic point cloud
     rng = np.random.default_rng()
-    xyz = rng.random(size=(num_points, 3))
+    xyz = rng.uniform(0.0, 200.0, size=(num_points, 3)).astype(np.float32)
 
     # Converting k-nearest neighbors to CSR format
     kneigh = KDTree(xyz).query(xyz, k=k, workers=-1)

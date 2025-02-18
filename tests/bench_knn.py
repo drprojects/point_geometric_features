@@ -8,8 +8,7 @@ import pgeof
 @pytest.fixture
 def random_point_cloud():
     rng = np.random.default_rng()
-    return rng.random(0, 100, size=((1000000, 3))).astype("float32")
-
+    return rng.uniform(0.0, 200.0, size=(1000000, 3)).astype(np.float32)
 
 @pytest.mark.benchmark(group="knn", disable_gc=True, warmup=True)
 def test_knn_scipy(benchmark, random_point_cloud):
