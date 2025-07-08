@@ -79,26 +79,21 @@ static inline PCAResult<real_t> pca_from_pointcloud(const PointCloud<real_t>& cl
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix<real_t, 3, 3>> es(cov);
 
     // Sort the values and vectors in order of increasing eigenvalue
-    const auto ev = es.eigenvalues().real();
+    const auto ev = es.eigenvalues();
 
-    std::array<Eigen::Index, 3> indices = {0, 1, 2};
+    // Clamp eigen values
+    Vec3<real_t> val = {(std::max(ev(0), real_t(0.))), (std::max(ev(1), real_t(0.))), (std::max(ev(2), real_t(0.)))};
 
-    std::sort(
-        std::begin(indices), std::end(indices), [&](Eigen::Index i1, Eigen::Index i2) { return ev(i1) > ev(i2); });
-
-    Vec3<real_t> val = {
-        (std::max(ev(indices[0]), real_t(0.))), (std::max(ev(indices[1]), real_t(0.))),
-        (std::max(ev(indices[2]), real_t(0.)))};
-    Vec3<real_t> v0 = es.eigenvectors().col(indices[0]).real();
-    Vec3<real_t> v1 = es.eigenvectors().col(indices[1]).real();
-    Vec3<real_t> v2 = es.eigenvectors().col(indices[2]).real();
+    Vec3<real_t> v0 = es.eigenvectors().col(0);
+    Vec3<real_t> v1 = es.eigenvectors().col(1);
+    Vec3<real_t> v2 = es.eigenvectors().col(2);
 
     // To standardize the orientation of eigenvectors, we choose to enforce all eigenvectors
     // to be expressed in the Z+ half-space.
-    // Only the third eigenvector (v2) needs to be reoriented because it is the
+    // Only the third eigenvector (v2 the surface normal) needs to be reoriented because it is the
     // only one used in further computations.
     // TODO: In case we want to orient normal, this should be improved
-    if (v2(2) < real_t(0.)) { v2 = real_t(-1.) * v2; }
+    if (v2(2) < real_t(0.)) { v2 *= real_t(-1.); };
     return {val, v0, v1, v2};
 };
 
