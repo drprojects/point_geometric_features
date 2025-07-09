@@ -275,14 +275,12 @@ void compute_selected_features(
                             pca.val(2) * std::abs(pca.v2(2))};
 
                     feature_results[output_id] = unary_vector(2) / unary_vector.norm();
-                    // TODO: Jakteristics compute this as feature_results[output_id] = real_t(1.0) -
-                    // std::abs(pca.v2(2));
-                    // It seems to be the most common formula for the verticality in the literature
                 }
                 break;
             case EFeatureID::Verticality:
                 // The verticality as defined in most of the papers
                 // http://lareg.ensg.eu/labos/matis/pdf/articles_revues/2015/isprs_wjhm_15.pdf
+                // It's the way it's computed in jakteristics
                 feature_results[output_id] = real_t(1.0) - std::abs(pca.v2(2));
                 break;
             case EFeatureID::Eigentropy:
