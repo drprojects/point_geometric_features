@@ -79,14 +79,14 @@ static inline PCAResult<real_t> pca_from_pointcloud(const PointCloud<real_t>& cl
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix<real_t, 3, 3>> es(cov);
 
     // Sort the values and vectors in order of increasing eigenvalue
-    const auto ev = es.eigenvalues();
+    const auto& ev = es.eigenvalues();
 
     // Clamp eigen values
-    Vec3<real_t> val = {(std::max(ev(0), real_t(0.))), (std::max(ev(1), real_t(0.))), (std::max(ev(2), real_t(0.)))};
+    Vec3<real_t> val = {(std::max(ev(2), real_t(0.))), (std::max(ev(1), real_t(0.))), (std::max(ev(0), real_t(0.)))};
 
-    Vec3<real_t> v0 = es.eigenvectors().col(0);
+    Vec3<real_t> v0 = es.eigenvectors().col(2);
     Vec3<real_t> v1 = es.eigenvectors().col(1);
-    Vec3<real_t> v2 = es.eigenvectors().col(2);
+    Vec3<real_t> v2 = es.eigenvectors().col(0);
 
     // To standardize the orientation of eigenvectors, we choose to enforce all eigenvectors
     // to be expressed in the Z+ half-space.
